@@ -1,0 +1,12 @@
+#ifndef EXPERIMENT_VALUES
+#define EXPERIMENT_VALUES
+
+struct experimentValues{
+    int distribution;
+    int K;
+    int N;
+    int T;
+    int algorithm;
+};
+
+#endif
