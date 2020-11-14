@@ -6,8 +6,8 @@
 /* Function that gets the basic experiment values from the user,
  * i.e. the used reward distribution for each arm, the amount of
  * arms K, the amount of round N, the amount of steps per round T,
- * and the algorithm to use. These values are stored in a vector
- * which is then returned.
+ * and the algorithm to use. These values are stored in an 
+ * experimentValues struct, which was passed by reference.
  */ 
 void initialiseExperiment(struct experimentValues &experiment_values){
     std::cout << "Please choose a distribution:\n    (0) Gaussian/Normal\n    (1) Bernoulli" << "\n";
