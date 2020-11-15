@@ -13,12 +13,9 @@ int main(){
     initialiseExperiment(experiment_values);
 
 
-    /* Initialise the K bandits/the true action values. */
-    std::vector<double> bandits = initialiseBandits(experiment_values.K);
-
     switch(experiment_values.algorithm){
         case 0:
-            epsilonGreedyMain(experiment_values, bandits);
+            epsilonGreedyMain(experiment_values);
             break;
         case 1:
             //Optimistic Initial Values

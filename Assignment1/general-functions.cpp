@@ -3,6 +3,44 @@
 #include <iostream>
 #include "experimentValuesStruct.hpp"
 
+std::default_random_engine generator(time(0));
+
+/* Function that finds and returns the index of the largest
+ * value in a double vector.
+ */
+int getIndexOfLargestValue(std::vector<double> vector){
+    int largest_value_index = 0;
+    double largest_value = vector[0];
+    for (int i = 1; i < vector.size(); i++){
+        if (largest_value < vector[i]){
+            largest_value = vector[i];
+            largest_value_index = i;
+        }
+    }
+    return largest_value_index;
+}
+
+
+/* Function that returns a random integer on the range [lower_limit, upper_limit]. */
+int getRandomIntFromRangeUniform(int lower_limit, int upper_limit){
+    std::uniform_int_distribution<int> distribution(lower_limit, upper_limit);
+    return distribution(generator);
+}
+
+/* Function that returns a random decimal number [lower_limit, upper_limit]. */
+double getRandomNumberFromRangeUniform(int lower_limit, int upper_limit){
+    std::uniform_real_distribution<double> distribution(lower_limit, upper_limit);
+    return distribution(generator);
+}
+
+/* Function that returns a random decimal number from a normal distribution
+ * with a certain mean and standard_deviation.
+ */ 
+double getRandomNumberFromRangeNormal(double mean, double standard_deviation){
+    std::normal_distribution<double> distribution(mean, standard_deviation);
+    return distribution(generator);
+}
+
 /* Function that gets the basic experiment values from the user,
  * i.e. the used reward distribution for each arm, the amount of
  * arms K, the amount of round N, the amount of steps per round T,
@@ -27,19 +65,28 @@ void initialiseExperiment(struct experimentValues &experiment_values){
 }
 
 
-/* Function that initialises a chosen number K of bandits,
+/* Function that initialises a chosen number K of arms/actions,
  * i.e. K values are sampled from a normal distribution with
  * mean 0 and standard deviation 1, to denote the K true action
- * values.
+ * values. The function also keeps track of which action value
+ * is the highest, i.e. which action is the optimal action. At
+ * the end of initialisation, this value is included in the return
+ * vector.
  */ 
-std::vector<double> initialiseBandits(int K){
-    std::vector<double> bandits;
-    std::default_random_engine generator(time(0));
-    std::normal_distribution<double> distribution(0.0, 1.0);
+std::vector<double> initialiseBandit(int K){
+    std::vector<double> bandit;
 
+    int max_index = 0;
     for (int i = 0; i < K; i++){
-        bandits.push_back(distribution(generator));
+        bandit.push_back(getRandomNumberFromRangeNormal(0.0, 1.0));
+        if (i > 0){
+            if (bandit[i] > bandit[max_index]){
+                max_index = i;
+            }
+        }
     }
 
-    return bandits;
+    bandit.push_back(max_index);
+
+    return bandit;
 }
