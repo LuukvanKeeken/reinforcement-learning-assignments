@@ -2,6 +2,8 @@
 #include <vector>
 #include "../experimentValuesStruct.hpp"
 #include "../general-functions.hpp"
+#include <math.h>
+#include <fstream>
 
 /* Function that calculates the new action value estimate for the last
  * chosen action, with an equation of the form newEstimate = oldEstimate +
@@ -34,7 +36,17 @@ void integratePercentageOptimalActionChosen(std::vector<double> &averaged_p_o_a_
  */
 void integrateAllRewards(std::vector<double> &all_rewards_averaged, std::vector<double> all_rewards, int round){
     for (int i = 0; i < all_rewards_averaged.size(); i++){
-        all_rewards_averaged[i] = all_rewards_averaged[i] + (1.0/((double)round+1)*(all_rewards[i] - all_rewards_averaged[i]));
+        all_rewards_averaged[i] = all_rewards_averaged[i] + (1.0/((double)round+1))*(all_rewards[i] - all_rewards_averaged[i]);
+    }
+}
+
+/* Function that takes in a vector of average rewards received 
+ * at each precise time step, and calculates at each time step the 
+ * average reward received up to and including that time step.
+ */
+void finalAveraging(std::vector<double> &average_all_rewards){
+    for (int i = 1; i < average_all_rewards.size(); i++){
+        average_all_rewards[i] = average_all_rewards[i-1] + (1.0/((double)i + 1))*(average_all_rewards[i] - average_all_rewards[i-1]);
     }
 }
 
@@ -135,10 +147,41 @@ void epsilonGreedyMain(struct experimentValues experiment_values){
         action_counter.clear();
 
     }
+
+    //finalAveraging(all_rewards_averaged);
+
     for (int i = 0; i < experiment_values.T; i += 100){
         std::cout << i << ": \n"; 
         std::cout << "    average reward: " << all_rewards_averaged[i] << "\n";
         std::cout << "    percentage optimal action: " << averaged_percentage_optimal_action_chosen[i] << "\n";
     }
 
+
+    double mean = 0;
+    for (int i = 0; i < total_rewards.size(); i++){
+        mean += total_rewards[i];
+    }
+    mean /= total_rewards.size();
+    std::cout << "mean total reward: " << mean << "\n";
+
+    double sum_of_squared_differences = 0;
+    for (int i = 0; i < total_rewards.size(); i++){
+        sum_of_squared_differences += pow(total_rewards[i] - mean, 2);
+    }
+    sum_of_squared_differences /= total_rewards.size();
+
+    double standard_deviation = sqrt(sum_of_squared_differences);
+    std::cout << "standard deviation total reward: " << standard_deviation << "\n";
+
+    std::ofstream file;
+    std::string file_name = "dist_" + std::to_string(experiment_values.distribution) + "K_" + std::to_string(experiment_values.K) +
+        "runs_" + std::to_string(experiment_values.N) + "steps_" + std::to_string(experiment_values.T) + "algorithm_" + std::to_string(experiment_values.algorithm) +
+        "epsilon_" + std::to_string(epsilon);
+    file.open("epsilon-greedy/" + file_name + ".csv");
+    file << "average reward,percentage optimal action\n"; 
+    for (int i = 0; i < experiment_values.T; i++){
+        file << all_rewards_averaged[i] << "," << averaged_percentage_optimal_action_chosen[i] << "\n";
+    }
+
+    file.close();
 }
