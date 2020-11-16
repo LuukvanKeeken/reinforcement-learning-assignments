@@ -2,6 +2,7 @@
 #include <random>
 #include <iostream>
 #include "experimentValuesStruct.hpp"
+#include <math.h>
 
 std::default_random_engine generator(time(0));
 
@@ -40,6 +41,23 @@ double getRandomNumberFromRangeNormal(double mean, double standard_deviation){
     std::normal_distribution<double> distribution(mean, standard_deviation);
     return distribution(generator);
 }
+
+double getReward(double true_action_value, struct experimentValues experiment_values){
+    double reward = 0;
+    /* When the user wants the rewards to be sampled from a 
+     * normal distribution with as the mean the true action
+     * value, and a unit standard deviation. */
+    if (experiment_values.distribution == 0){
+        reward = getRandomNumberFromRangeNormal(true_action_value, 1);
+    } else if (experiment_values.distribution == 1){
+        std::cout << "Bernoulli not yet implemented\n";
+        exit(0);
+    }
+
+    return reward;
+
+}
+
 
 /* Function that gets the basic experiment values from the user,
  * i.e. the used reward distribution for each arm, the amount of
@@ -89,4 +107,69 @@ std::vector<double> initialiseBandit(int K){
     bandit.push_back(max_index);
 
     return bandit;
+}
+
+/* Function that is called after each round to calculate the new
+ * average reward at each time step. */
+void integrateAllRewards(std::vector<double> &all_rewards_averaged, std::vector<double> all_rewards, int round){
+    for (int i = 0; i < all_rewards_averaged.size(); i++){
+        all_rewards_averaged[i] = all_rewards_averaged[i] + (1.0/((double)round+1))*(all_rewards[i] - all_rewards_averaged[i]);
+    }
+}
+
+
+/* Function that is called after each round to calculate the new
+ * average percentage of the true optimal action having been chosen
+ * at each time step. */
+void integratePercentageOptimalActionChosen(std::vector<double> &averaged_p_o_a_c, std::vector<double> p_o_a_c, int round){
+    for (int i = 0; i < averaged_p_o_a_c.size(); i++){
+        averaged_p_o_a_c[i] = averaged_p_o_a_c[i] + (1.0/((double)round+1)*(p_o_a_c[i] - averaged_p_o_a_c[i]));
+    }
+}
+
+
+/* Function that selects the next action, according to which 
+ * algorithm is being used. */
+int selectAction(struct experimentValues experiment_values, std::vector<double> action_value_estimates, std::vector<int> action_counter, int step){
+    int action = 0;
+    /* Epsilon-Greedy and Optimistic Initial Values. */
+    if (experiment_values.algorithm == 0 || experiment_values.algorithm == 1){
+        /* With a probability of epsilon, choose a random action.
+         * Otherwise, choose the action that has the highest 
+         * estimated value.
+         */
+        if (getRandomNumberFromRangeUniform(0, 1) <= experiment_values.epsilon){
+            /* Choose a random action. */
+            action = getRandomIntFromRangeUniform(0, experiment_values.K);
+        } else {
+            /* Find the action that has the highest action value estimate. */
+            action = getIndexOfLargestValue(action_value_estimates);
+        }
+    /* Upper-Confidence-Bound Action Selection. */    
+    } else if (experiment_values.algorithm == 2){
+        double max = 0;
+        double estimate_plus_confidence;
+        for (int i = 0; i < experiment_values.K; i++){
+            /* If this action has never been chosen, it is considered 
+             * to be the maximising action. */
+            if (action_counter[i] == 0){
+                action = i;
+                break;
+            }
+            estimate_plus_confidence = action_value_estimates[i] + experiment_values.c*sqrt(log(step+1)/action_counter[i]);
+            if (estimate_plus_confidence > max){
+                max = estimate_plus_confidence;
+                action = i;
+            }
+        }
+    }
+    return action;
+}
+
+/* Function that calculates the new action value estimate for the last
+ * chosen action, with an equation of the form newEstimate = oldEstimate +
+ * 1/(number of times action was chosen)*(newReward - oldEstimate). */
+void updateValueEstimate(std::vector<double> &action_value_estimates, std::vector<int> &action_counter, int action, double reward){
+    action_counter[action] += 1;
+    action_value_estimates[action] = action_value_estimates[action] + (1.0/action_counter[action])*(reward - action_value_estimates[action]);
 }

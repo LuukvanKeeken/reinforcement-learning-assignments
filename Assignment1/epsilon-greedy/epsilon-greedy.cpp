@@ -4,12 +4,19 @@
 #include "../general-functions.hpp"
 #include <math.h>
 #include <fstream>
+/* This file contains the functionality for both Epsilon-Greedy and 
+ * Optimistic Initial Values, as OIV is essentially the same as 
+ * Epsilon-Greedy, but with an extra choice of what the initial
+ * values of the action value estimates should be.
+ */
+
+
 
 /* Function that calculates the new action value estimate for the last
  * chosen action, with an equation of the form newEstimate = oldEstimate +
  * 1/(number of times action was chosen)*(newReward - oldEstimate).
  */
-void updateEstimate(std::vector<double> &action_value_estimates, std::vector<int> &action_counter, int action, double reward){
+void updateValueEstimate(std::vector<double> &action_value_estimates, std::vector<int> &action_counter, int action, double reward){
     action_counter[action] += 1;
     action_value_estimates[action] = action_value_estimates[action] + (1.0/action_counter[action])*(reward - action_value_estimates[action]);
 }
@@ -55,6 +62,17 @@ void epsilonGreedyMain(struct experimentValues experiment_values){
     double epsilon;
     std::cout << "Please choose a value for epsilon on the range [0, 1]:\n";
     std::cin >> epsilon;
+    /* If the chose algorithm is Optimistic Initial Values, let
+     * the user put in a value to be used as initial estimate
+     * for all action values. Else, simply use 0 as the initial
+     * estimate.
+     */
+    double initial_estimate = 0.0;
+    if (experiment_values.algorithm = 1){
+        std::cout << "Please choose an initial estimate:\n";
+        std::cin >> initial_estimate;
+    }
+
     std::cout << "Learning phase starts now, please wait for the results!\n";
 
     int action;
@@ -92,7 +110,7 @@ void epsilonGreedyMain(struct experimentValues experiment_values){
          * was chosen. 
          */
         for (int i = 0; i < experiment_values.K; i++){
-            action_value_estimates.push_back(0.0);
+            action_value_estimates.push_back(initial_estimate);
             action_counter.push_back(0);
         }
 
@@ -115,7 +133,7 @@ void epsilonGreedyMain(struct experimentValues experiment_values){
              * this round, and save it in the all_rewards vector.
              */
             reward = getReward(bandit[action]);
-            updateEstimate(action_value_estimates, action_counter, action, reward);
+            updateValueEstimate(action_value_estimates, action_counter, action, reward);
             all_rewards.push_back(reward);
             total_reward += reward;
 
