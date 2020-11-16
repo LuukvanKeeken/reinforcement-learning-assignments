@@ -174,9 +174,9 @@ void epsilonGreedyMain(struct experimentValues experiment_values){
     std::cout << "standard deviation total reward: " << standard_deviation << "\n";
 
     std::ofstream file;
-    std::string file_name = "dist_" + std::to_string(experiment_values.distribution) + "K_" + std::to_string(experiment_values.K) +
-        "runs_" + std::to_string(experiment_values.N) + "steps_" + std::to_string(experiment_values.T) + "algorithm_" + std::to_string(experiment_values.algorithm) +
-        "epsilon_" + std::to_string(epsilon);
+    std::string file_name = "dist-" + std::to_string(experiment_values.distribution) + "_K-" + std::to_string(experiment_values.K) +
+        "_runs-" + std::to_string(experiment_values.N) + "_steps-" + std::to_string(experiment_values.T) + "_algorithm-" + std::to_string(experiment_values.algorithm) +
+        "_epsilon-" + std::to_string(epsilon);
     file.open("epsilon-greedy/" + file_name + ".csv");
     file << "average reward,percentage optimal action\n"; 
     for (int i = 0; i < experiment_values.T; i++){
