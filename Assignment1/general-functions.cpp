@@ -50,8 +50,8 @@ double getReward(double true_action_value, struct experimentValues experiment_va
     if (experiment_values.distribution == 0){
         reward = getRandomNumberFromRangeNormal(true_action_value, 1);
     } else if (experiment_values.distribution == 1){
-        std::cout << "Bernoulli not yet implemented\n";
-        exit(0);
+        std::bernoulli_distribution distribution(true_action_value);
+        reward = distribution(generator);
     }
 
     return reward;
@@ -91,20 +91,26 @@ void initialiseExperiment(struct experimentValues &experiment_values){
  * the end of initialisation, this value is included in the return
  * vector.
  */ 
-std::vector<double> initialiseBandit(int K){
+std::vector<double> initialiseBandit(int K, int distribution){
     std::vector<double> bandit;
 
+    /* For a Gaussian/Normal distribution. */
+    
     int max_index = 0;
     for (int i = 0; i < K; i++){
-        bandit.push_back(getRandomNumberFromRangeNormal(0.0, 1.0));
-        if (i > 0){
-            if (bandit[i] > bandit[max_index]){
-                max_index = i;
-            }
+        if (distribution == 0){ /* For a Gaussian/Normal distribution of action values and rewards. */
+            bandit.push_back(getRandomNumberFromRangeNormal(0.0, 1.0));
+        } else if (distribution == 1){ /* For a Bernoulli distribution of rewards. */
+            bandit.push_back(getRandomNumberFromRangeUniform(0, 1));
+        }
+
+        if (bandit[i] > bandit[max_index]){
+            max_index = i;
         }
     }
-
     bandit.push_back(max_index);
+    
+    
 
     return bandit;
 }

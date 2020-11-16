@@ -59,7 +59,7 @@ void experimentLoop(struct experimentValues experiment_values){
         /* Initialise the K arms/the true action values, with the index of
          * the optimal action at the end.
          */
-        bandit = initialiseBandit(experiment_values.K);
+        bandit = initialiseBandit(experiment_values.K, experiment_values.distribution);
 
         /* Initialise the K action value estimates, each starting at initial_estimate. 
          * Also initialise a vector that counts how many times each action
