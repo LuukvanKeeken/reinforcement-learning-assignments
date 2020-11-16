@@ -78,7 +78,7 @@ void initialiseExperiment(struct experimentValues &experiment_values){
     std::cout << "Please choose amount of steps in each round:" << "\n";
     std::cin >> experiment_values.T;
 
-    std::cout << "Please choose the algorithm:\n    (0) Epsilon-greedy\n    (1) Optimistic Initial Values" << "\n";
+    std::cout << "Please choose the algorithm:\n    (0) Epsilon-greedy\n    (1) Optimistic Initial Values\n    (2) Upper-Confidence-Bound" << "\n";
     std::cin >> experiment_values.algorithm;
 }
 
