@@ -23,7 +23,7 @@ void directoryCheck(const char* directory_name, std::string dir_name){
     } else if (!(info.st_mode & S_IFDIR)){
         std::cout << "\"" + dir_name + "\" is not an existing directory\n";
         if (mkdir(directory_name, 0777) != 0){
-            std::cout << "Could not create directory \"" + dir_name + "\", please create it manually.\n";
+            std::cout << "Could not create directory \"" + dir_name + "\", please create it manually with that exact name, and restart the experiment.\n";
         } else {
             std::cout << "Created directory \"" + dir_name + "\".\n";
         }
