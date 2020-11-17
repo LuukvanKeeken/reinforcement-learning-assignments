@@ -4,8 +4,32 @@
 #include "experimentValuesStruct.hpp"
 #include <math.h>
 #include <fstream>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 std::default_random_engine generator(time(0));
+
+
+/* Function that checks if a directory exists. If it doesn't, a new
+ * directory with the desired name is created. */
+void directoryCheck(const char* directory_name, std::string dir_name){
+    struct stat info;
+    if (stat(directory_name, &info) != 0){
+        if (mkdir(directory_name, 0777) != 0){
+            std::cout << "Could not create directory \"" + dir_name + "\", please create it manually.\n";
+        } else {
+            std::cout << "Created directory \"" + dir_name + "\".\n";
+        }
+    } else if (!(info.st_mode & S_IFDIR)){
+        std::cout << "\"" + dir_name + "\" is not an existing directory\n";
+        if (mkdir(directory_name, 0777) != 0){
+            std::cout << "Could not create directory \"" + dir_name + "\", please create it manually.\n";
+        } else {
+            std::cout << "Created directory \"" + dir_name + "\".\n";
+        }
+    }
+}
+
 
 
 /* Function that creates a .csv file with as a file name all the relevant values,
@@ -18,24 +42,28 @@ void createOutputFile(struct experimentValues experiment_values, std::vector<dou
     std::string file_name;
     switch(experiment_values.algorithm){
         case 0:
+            directoryCheck("epsilon-greedy", "epsilon-greedy");
             file_name = "dist-" + std::to_string(experiment_values.distribution) + "_K-" + std::to_string(experiment_values.K) +
                 "_runs-" + std::to_string(experiment_values.N) + "_steps-" + std::to_string(experiment_values.T) + "_algorithm-" + std::to_string(experiment_values.algorithm) +
                 "_epsilon-" + std::to_string(experiment_values.epsilon);
             file.open("epsilon-greedy/" + file_name + ".csv");
             break;
         case 1:
+            directoryCheck("optimistic-initial-values", "optimistic-initial-values");
             file_name = "dist-" + std::to_string(experiment_values.distribution) + "_K-" + std::to_string(experiment_values.K) +
                 "_runs-" + std::to_string(experiment_values.N) + "_steps-" + std::to_string(experiment_values.T) + "_algorithm-" + std::to_string(experiment_values.algorithm) +
                 "_epsilon-" + std::to_string(experiment_values.epsilon) + "_initEst-" + std::to_string(experiment_values.initial_estimate);
             file.open("optimistic-initial-values/" + file_name + ".csv");
             break;
         case 2:
+            directoryCheck("upper-confidence-bound", "upper-confidence-bound");
             file_name = "dist-" + std::to_string(experiment_values.distribution) + "_K-" + std::to_string(experiment_values.K) +
                 "_runs-" + std::to_string(experiment_values.N) + "_steps-" + std::to_string(experiment_values.T) + "_algorithm-" + std::to_string(experiment_values.algorithm) +
                 "_c-" + std::to_string(experiment_values.c);
             file.open("upper-confidence-bound/" + file_name + ".csv");
             break;
         case 3:
+            directoryCheck("gradient-based-algorithm",  "gradient-based-algorithm");
             file_name = "dist-" + std::to_string(experiment_values.distribution) + "_K-" + std::to_string(experiment_values.K) +
                 "_runs-" + std::to_string(experiment_values.N) + "_steps-" + std::to_string(experiment_values.T) + "_algorithm-" + std::to_string(experiment_values.algorithm) +
                 "_alpha-" + std::to_string(experiment_values.alpha);
