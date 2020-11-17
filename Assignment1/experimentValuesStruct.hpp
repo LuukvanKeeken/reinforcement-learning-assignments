@@ -10,6 +10,7 @@ struct experimentValues{
     double epsilon;
     double initial_estimate = 0.0;
     double c;
+    double alpha;
 };
 
 #endif

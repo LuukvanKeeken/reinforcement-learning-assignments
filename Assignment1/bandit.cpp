@@ -4,6 +4,7 @@
 #include "epsilon-greedy/epsilon-greedy.hpp"
 #include "experimentValuesStruct.hpp"
 #include "experiment-loop/experiment-loop.hpp"
+#include "experiment-loop/experiment-loop-gradient.hpp"
 
 
 
@@ -13,27 +14,10 @@ int main(){
     struct experimentValues experiment_values;
     initialiseExperiment(experiment_values);
 
-    experimentLoop(experiment_values);
-    // switch(experiment_values.algorithm){
-    //     case 0:
-    //         epsilonGreedyMain(experiment_values);
-    //         break;
-    //     case 1:
-    //         /* Same function, but extra choice of initial values will be triggered. */
-    //         epsilonGreedyMain(experiment_values);
-    //         break;
-    //     case 2:
-    //         //Third algorithm
-    //         std::cout << "not yet implemented\n"; 
-    //         break;
-    //     case 3:
-    //         //Fourth algorithm
-    //         std::cout << "not yet implemented\n"; 
-    //         break;
-    //     default:
-    //         break;
-    // }
-
-
+    if (experiment_values.algorithm == 3){
+        experimentLoopGradient(experiment_values);
+    } else {
+        experimentLoop(experiment_values);
+    }
     return 0;
 }

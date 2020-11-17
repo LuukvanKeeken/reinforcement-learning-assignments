@@ -3,8 +3,54 @@
 #include <iostream>
 #include "experimentValuesStruct.hpp"
 #include <math.h>
+#include <fstream>
 
 std::default_random_engine generator(time(0));
+
+
+/* Function that creates a .csv file with as a file name all the relevant values,
+ * such as the used algorithm, the amount of rounds, and any relevant parameters
+ * such as epsilon and alpha. This file contains the averaged reward received at
+ * each step, and average percentage of the optimal action having been chosen at
+ * each step, over all runs. */
+void createOutputFile(struct experimentValues experiment_values, std::vector<double> all_rewards_averaged, std::vector<double> averaged_percentage_optimal_action_chosen){
+    std::ofstream file;
+    std::string file_name;
+    switch(experiment_values.algorithm){
+        case 0:
+            file_name = "dist-" + std::to_string(experiment_values.distribution) + "_K-" + std::to_string(experiment_values.K) +
+                "_runs-" + std::to_string(experiment_values.N) + "_steps-" + std::to_string(experiment_values.T) + "_algorithm-" + std::to_string(experiment_values.algorithm) +
+                "_epsilon-" + std::to_string(experiment_values.epsilon);
+            file.open("epsilon-greedy/" + file_name + ".csv");
+            break;
+        case 1:
+            file_name = "dist-" + std::to_string(experiment_values.distribution) + "_K-" + std::to_string(experiment_values.K) +
+                "_runs-" + std::to_string(experiment_values.N) + "_steps-" + std::to_string(experiment_values.T) + "_algorithm-" + std::to_string(experiment_values.algorithm) +
+                "_epsilon-" + std::to_string(experiment_values.epsilon) + "_initEst-" + std::to_string(experiment_values.initial_estimate);
+            file.open("optimistic-initial-values/" + file_name + ".csv");
+            break;
+        case 2:
+            file_name = "dist-" + std::to_string(experiment_values.distribution) + "_K-" + std::to_string(experiment_values.K) +
+                "_runs-" + std::to_string(experiment_values.N) + "_steps-" + std::to_string(experiment_values.T) + "_algorithm-" + std::to_string(experiment_values.algorithm) +
+                "_c-" + std::to_string(experiment_values.c);
+            file.open("upper-confidence-bound/" + file_name + ".csv");
+            break;
+        case 3:
+            file_name = "dist-" + std::to_string(experiment_values.distribution) + "_K-" + std::to_string(experiment_values.K) +
+                "_runs-" + std::to_string(experiment_values.N) + "_steps-" + std::to_string(experiment_values.T) + "_algorithm-" + std::to_string(experiment_values.algorithm) +
+                "_alpha-" + std::to_string(experiment_values.alpha);
+            file.open("gradient-based-algorithm/" + file_name + ".csv");
+            break;
+    }
+
+    file << "average reward,percentage optimal action\n";
+    for (int i = 0; i < experiment_values.T; i++){
+        file << all_rewards_averaged[i] << "," << averaged_percentage_optimal_action_chosen[i] << "\n";
+    }
+
+    file.close();
+}
+
 
 /* Function that finds and returns the index of the largest
  * value in a double vector.
@@ -44,6 +90,7 @@ double getRandomNumberFromRangeNormal(double mean, double standard_deviation){
 
 double getReward(double true_action_value, struct experimentValues experiment_values){
     double reward = 0;
+
     /* When the user wants the rewards to be sampled from a 
      * normal distribution with as the mean the true action
      * value, and a unit standard deviation. */
@@ -78,7 +125,7 @@ void initialiseExperiment(struct experimentValues &experiment_values){
     std::cout << "Please choose amount of steps in each round:" << "\n";
     std::cin >> experiment_values.T;
 
-    std::cout << "Please choose the algorithm:\n    (0) Epsilon-greedy\n    (1) Optimistic Initial Values\n    (2) Upper-Confidence-Bound" << "\n";
+    std::cout << "Please choose the algorithm:\n    (0) Epsilon-greedy\n    (1) Optimistic Initial Values\n    (2) Upper-Confidence-Bound\n    (3) Gradient-Based Algorithm" << "\n";
     std::cin >> experiment_values.algorithm;
 }
 
@@ -133,6 +180,26 @@ void integratePercentageOptimalActionChosen(std::vector<double> &averaged_p_o_a_
     }
 }
 
+/* Function that calculates and prints the mean and standard deviation
+ * of the total_rewards of all runs. */
+void printMeanAndStandardDeviation(std::vector<double> total_rewards){
+    double mean = 0;
+    for (int i = 0; i < total_rewards.size(); i++){
+        mean += total_rewards[i];
+    }
+    mean /= total_rewards.size();
+    std::cout << "mean total reward: " << mean << "\n";
+
+    double sum_of_squared_differences = 0;
+    for (int i = 0; i < total_rewards.size(); i++){
+        sum_of_squared_differences += pow(total_rewards[i] - mean, 2);
+    }
+    sum_of_squared_differences /= total_rewards.size();
+
+    double standard_deviation = sqrt(sum_of_squared_differences);
+    std::cout << "standard deviation total reward: " << standard_deviation << "\n";
+}
+
 
 /* Function that selects the next action, according to which 
  * algorithm is being used. */
@@ -172,6 +239,53 @@ int selectAction(struct experimentValues experiment_values, std::vector<double> 
     return action;
 }
 
+/* Function that returns an action, specifically for the gradient algorithm.
+ * First, the action probabilities are updated. Then, an action is chosen
+ * randomly, taking into account the different probabilities. */
+int selectAction(struct experimentValues experiment_values, std::vector<double> action_preferences, std::vector<double> &action_probabilities){
+    double sum_of_preferences = 0;
+    for (int i = 0; i < experiment_values.K; i++){
+        sum_of_preferences += exp(action_preferences[i]);
+    }
+
+    for (int i = 0; i < experiment_values.K; i++){
+        action_probabilities[i] = exp(action_preferences[i])/sum_of_preferences;
+    }
+
+    /* In this method of selecting an action, each action is assigned
+     * a range somewhere between 0 and 1, e.g. action 0 might be from
+     * 0 to 0.147, action 1 from 0.147 to 0.221, etc. A random number
+     * between 0 and 1 is sampled from the uniform distribution. The 
+     * action whose range the random number falls in is selected. */
+    double random_number = getRandomNumberFromRangeUniform(0, 1);
+    double sum = 0;
+    for (int i = 0; i < experiment_values.K; i++){
+        sum += action_probabilities[i];
+        if (sum >= random_number){
+            return i;
+        }
+    }
+
+    return 0;
+}
+
+/* Function that updates the action preferences for the gradient algorithm. */
+void updateActionPreferences(int action, double reward, std::vector<double> &action_preferences, std::vector<double> action_probabilities, double average_reward, double alpha){
+    for (int i = 0; i < action_preferences.size(); i++){
+        if (i == action){
+            action_preferences[i] = action_preferences[i] + alpha*(reward - average_reward)*(1 - action_probabilities[i]);
+        } else {
+            action_preferences[i] = action_preferences[i] - alpha*(reward - average_reward)*action_probabilities[i];
+        }
+    }
+}
+
+/* Function that calculates the new average of all received rewards. */
+void updateAverageReward(double &average_reward, double reward, int step){
+    average_reward = average_reward + (1.0/(step+1))*(reward - average_reward);
+}
+
+
 /* Function that calculates the new action value estimate for the last
  * chosen action, with an equation of the form newEstimate = oldEstimate +
  * 1/(number of times action was chosen)*(newReward - oldEstimate). */
@@ -179,3 +293,4 @@ void updateValueEstimate(std::vector<double> &action_value_estimates, std::vecto
     action_counter[action] += 1;
     action_value_estimates[action] = action_value_estimates[action] + (1.0/action_counter[action])*(reward - action_value_estimates[action]);
 }
+
