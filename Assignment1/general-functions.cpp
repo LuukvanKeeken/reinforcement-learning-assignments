@@ -199,15 +199,6 @@ void integrateAllRewards(std::vector<double> &all_rewards_averaged, std::vector<
 }
 
 
-/* Function that is called after each round to calculate the new
- * average percentage of the true optimal action having been chosen
- * at each time step. */
-void integratePercentageOptimalActionChosen(std::vector<double> &averaged_p_o_a_c, std::vector<double> p_o_a_c, int round){
-    for (int i = 0; i < averaged_p_o_a_c.size(); i++){
-        averaged_p_o_a_c[i] = averaged_p_o_a_c[i] + (1.0/((double)round+1)*(p_o_a_c[i] - averaged_p_o_a_c[i]));
-    }
-}
-
 /* Function that calculates and prints the mean and standard deviation
  * of the total_rewards of all runs. */
 void printMeanAndStandardDeviation(std::vector<double> total_rewards){

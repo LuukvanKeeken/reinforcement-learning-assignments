@@ -1,7 +1,6 @@
 #include <iostream>
 #include <vector>
 #include "general-functions.hpp"
-#include "epsilon-greedy/epsilon-greedy.hpp"
 #include "experimentValuesStruct.hpp"
 #include "experiment-loop/experiment-loop.hpp"
 #include "experiment-loop/experiment-loop-gradient.hpp"

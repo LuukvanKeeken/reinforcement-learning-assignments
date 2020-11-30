@@ -36,12 +36,11 @@ void experimentLoop(struct experimentValues experiment_values){
     double reward;
     /* The sum of all rewards in one round. */
     double total_reward;
-    /* Average percentage of having chosen the optimal action at each 
-     * time step, over all rounds, initialised at 0 for each time step. 
-     */
-    std::vector<double> averaged_percentage_optimal_action_chosen(experiment_values.T, 0.0);
-    /* Percentage of having chosen the optimal action at each time step. */
-    std::vector<double> percentage_optimal_action_chosen;
+    /* Total sum for each time step if the optimal action was chosen in that time
+        step, over all runs. */
+    std::vector<double> sum_optimal_action_chosen(experiment_values.T, 0.0);
+    /* Vector that keeps track for each time step if the optimal action was chosen in that time step. */
+    std::vector<double> optimal_action_chosen;
 
     /* Average reward for each timestep, over all rounds. */
     std::vector<double> all_rewards_averaged(experiment_values.T, 0.0);
@@ -82,20 +81,25 @@ void experimentLoop(struct experimentValues experiment_values){
             all_rewards.push_back(reward);
             total_reward += reward;
 
-            /* Calculate the current percentage of having chosen the true optimal
-             * action out of the total number of chosen actions. */
-            percentage_optimal_action_chosen.push_back(100*((double)action_counter[bandit[experiment_values.K]]/(step+1)));
+            /* Check if the chosen action was the optimal action.
+             *  If so, store 1 for this time step, else store 0. */
+            if (action == bandit[experiment_values.K]){
+                optimal_action_chosen.push_back(1);
+            } else {
+                optimal_action_chosen.push_back(0);
+            }
         }
 
         /* Add the total_rewards sum for the last round to the vector
          * that stores the total_rewards sums for all rounds. */
         total_rewards.push_back(total_reward);
 
-        /* Update the vector that keeps track of the average percentage
-         * of having chosen the true optimal action at each time step
-         * over all rounds. */
-        integratePercentageOptimalActionChosen(averaged_percentage_optimal_action_chosen, percentage_optimal_action_chosen, round);
-        percentage_optimal_action_chosen.clear();
+        /* Update the vector that keeps track of sum of having chosen 
+         * the true optimal action at each time step over all rounds. */
+        for (int i = 0; i < experiment_values.T; i++){
+            sum_optimal_action_chosen[i] += optimal_action_chosen[i];
+        }
+        optimal_action_chosen.clear();
 
         /* Update the vector that keeps track of the average reward
          * at each time step. */
@@ -107,14 +111,19 @@ void experimentLoop(struct experimentValues experiment_values){
 
     }
 
+    for (int i = 0; i < experiment_values.T; i++){
+        sum_optimal_action_chosen[i] /= experiment_values.N;
+        sum_optimal_action_chosen[i] *= 100;
+    }
+
     for (int i = 0; i < experiment_values.T; i += 100){
         std::cout << i << ": \n";
         std::cout << "    average reward: " << all_rewards_averaged[i] << "\n";
-        std::cout << "    percentage optimal action: " << averaged_percentage_optimal_action_chosen[i] << "\n";
+        std::cout << "    percentage optimal action: " << sum_optimal_action_chosen[i] << "\n";
     }
 
     printMeanAndStandardDeviation(total_rewards);
 
-    createOutputFile(experiment_values, all_rewards_averaged, averaged_percentage_optimal_action_chosen);
+    createOutputFile(experiment_values, all_rewards_averaged, sum_optimal_action_chosen);
 
 }
