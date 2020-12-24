@@ -5,7 +5,8 @@
 
 
 void learningLoop(struct parameterValues parameter_values){
-    std::vector<std::string> currentBoard = {"X", "e", "O", "X", "X", "O", "e", "e", "e"};
+    /* Board is initialised with each cell empty ("e"). */
+    std::vector<std::string> currentBoard = {"e", "e", "e", "e", "e", "e", "e", "e", "e"};
 
 
     std::string gameResult = getGameResult(currentBoard);
