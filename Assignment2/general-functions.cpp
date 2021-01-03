@@ -5,6 +5,28 @@
 #include <map>
 #include "parameterValuesStruct.hpp"
 #include "general-functions.hpp"
+#include <random>
+
+/* Function that selects the action by the opponent.
+    For now, only random selection is implemented. */
+std::vector<std::string> actionByO(std::vector<std::string> currentBoard){
+    /* Random action by O. Find all places that are
+        still empty and put them in one vector. Then
+        get a random index of that vector, the value 
+        at that index is the location of the new O.*/
+    std::vector<int> freePlaces;
+    for (int i = 0; i < 9; i++){
+        if (currentBoard[i] == "e"){
+            freePlaces.push_back(i);
+        }
+    }
+    int selectedPlace = rand() % freePlaces.size();
+    currentBoard[freePlaces[selectedPlace]] = "O";
+    return currentBoard;
+
+}
+
+
 
 /* Function that checks if the input board state is an afterstate
     from the perspective of X, i.e. one more Xs than Os should be
@@ -51,7 +73,7 @@ std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoa
         }
     }
 
-    return possibleNewBoard;
+    return bestAfterstate;
 }
 
 /* Function that creates a q-value table for each possible board
@@ -168,7 +190,8 @@ double getQValue(std::vector<std::string> afterState, std::map<std::vector<std::
     return qValueTable[afterState];
 }
 
-
+/* Function that asks the user to provide the parameter values before
+    starting the learning phase. */
 void initialiseExperiment(struct parameterValues &parameter_values){
     std::cout << "Please choose the reinforcement learning algorithm you want to use:\n    0) Q-learning\n    1) Sarsa\n";
     std::cin >> parameter_values.RLAlg;
@@ -179,6 +202,8 @@ void initialiseExperiment(struct parameterValues &parameter_values){
     std::cout << "\nPlease declare the amount of steps:\n";
     std::cin >> parameter_values.steps;
 }
+
+
 
 /* Function that prints a board. */
 void printBoard(std::vector<std::string> board){
