@@ -13,7 +13,7 @@ std::vector<std::string> actionByO(std::vector<std::string> currentBoard){
     /* Random action by O. Find all places that are
         still empty and put them in one vector. Then
         get a random index of that vector, the value 
-        at that index is the location of the new O.*/
+        at that index is the location of the new O. */
     std::vector<int> freePlaces;
     for (int i = 0; i < 9; i++){
         if (currentBoard[i] == "e"){
@@ -48,9 +48,10 @@ bool checkIfXAfterState(std::vector<std::string> newBoard){
     return false;
 }
 
-/* Function that selects the next afterstate. */
+/* Function that selects the next afterstate. Doesn't necessarily select the best afterstate,
+    as there is a balance between exploration and exploitation. */
 std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, double> qValueTableXAfterStates){
-    std::vector<std::string> bestAfterstate = {"e", "e", "e", "e", "e", "e", "e", "e", "e"};
+    std::vector<std::string> bestAfterstate;
     double bestQValue = -10000;
     double newQValue = 0;
     std::vector<std::string> possibleNewBoard;
@@ -75,6 +76,35 @@ std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoa
 
     return bestAfterstate;
 }
+
+/* Function that finds the best possible afterstate from the current board. */
+std::vector<std::string> findBestAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, double> qValueTableXAfterStates){
+    std::vector<std::string> bestAfterstate;
+    double bestQValue = -10000;
+    double newQValue = 0;
+    std::vector<std::string> possibleNewBoard;
+    /* Go through all positions to check if an X can be placed there. */
+    for (int i = 0; i < 9; i++){
+        possibleNewBoard = currentBoard;
+        /* If the position is still free, look up the Q-value
+            for the afterstate that is reached when placing
+            an X there. */
+        if (currentBoard[i] == "e"){
+            possibleNewBoard[i] = "X";
+            newQValue = getQValue(possibleNewBoard, qValueTableXAfterStates);
+            /* If the Q-value for this afterstate is better than
+                the previous best, make this afterstate the new best. */
+            if (newQValue > bestQValue){
+                bestQValue = newQValue;
+                bestAfterstate = possibleNewBoard;
+            }
+        }
+    }
+
+    return bestAfterstate;
+}
+
+
 
 /* Function that creates a q-value table for each possible board
     state. Can probably be used to update afterstates for both
@@ -108,8 +138,18 @@ std::map<std::vector<std::string>, double> generateQValueTableXAfterStates(){
                                     newBoard[1] = possibleSymbols[p];
                                     for (int q = 0; q < 3; q++){
                                         newBoard[0] = possibleSymbols[q];
+                                        /* Only add the board if it is an afterstate from
+                                            X's perspective. */
                                         if (checkIfXAfterState(newBoard)){
-                                            qValueTableXAfterStates[newBoard] = 0;        
+                                            /* If in this board state X has won, give it
+                                                value 1. It doesn't matter too much if it
+                                                is invalid, as those won't be reached in 
+                                                the game. */
+                                            if (getGameResult(newBoard) == "X"){
+                                                qValueTableXAfterStates[newBoard] = 1;
+                                            } else {
+                                                qValueTableXAfterStates[newBoard] = 0; 
+                                            }       
                                         }
                                     }
                                 }
@@ -201,23 +241,36 @@ void initialiseExperiment(struct parameterValues &parameter_values){
 
     std::cout << "\nPlease declare the amount of steps:\n";
     std::cin >> parameter_values.steps;
+
+    std::cout << "\nPlease declare the value for alpha:\n";
+    std::cin >> parameter_values.alpha;
+
+    std::cout << "\nPlease declare the value for gamma:\n";
+    std::cin >> parameter_values.gamma;
 }
 
 
 
 /* Function that prints a board. */
 void printBoard(std::vector<std::string> board){
-    for (int i = 0; i < 3; i++){
-        std::cout << board[i];
-    }
-    std::cout << "\n";
-    for (int i = 3; i < 6; i++){
-        std::cout << board[i];
-    }
-    std::cout << "\n";
-    for (int i = 6; i < 9; i++){
-        std::cout << board[i];
-    }
-    std::cout << "\n";
+    std::cout << " " << board[0] << "|";
+    std::cout << board[1] << "|";
+    std::cout << board[2] << "\n";
+    std::cout << "------\n";
+    std::cout << " " << board[3] << "|";
+    std::cout << board[4] << "|";
+    std::cout << board[5] << "\n";
+    std::cout << "------\n";
+    std::cout << " " << board[6] << "|";
+    std::cout << board[7] << "|";
+    std::cout << board[8] << "\n";
 }
 
+/* Function that updates the Q-value for the given afterState, based on the
+    the Q-value of the best afterState than can be reached after O has made 
+    a move. In tic-tac-toe there are no rewards associated with single moves,
+    only +1, -1, or 0 at the end. That's why there is no reward factor in this
+    update equation. */
+void updateAfterstateQValue(struct parameterValues parameter_values, std::vector<std::string> afterState, std::map<std::vector<std::string>, double> &qValueTableXAfterStates, double bestAfterAfterstateQValue){
+    qValueTableXAfterStates[afterState] += parameter_values.alpha*(parameter_values.gamma*bestAfterAfterstateQValue - qValueTableXAfterStates[afterState]);
+}

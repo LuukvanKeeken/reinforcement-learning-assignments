@@ -7,6 +7,8 @@ struct parameterValues{
     int RLAlg;
     int explorationAlg;
     int steps;
+    double alpha;
+    double gamma;
 };
 
 #endif

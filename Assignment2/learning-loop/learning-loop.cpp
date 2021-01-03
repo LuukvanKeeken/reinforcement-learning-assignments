@@ -22,21 +22,15 @@ void learningLoop(struct parameterValues parameter_values){
         std::cout << "X PLAYS:\n";
         printBoard(currentBoard);
         std::cout << "\n";
-        if (step > 0){
-            //Update q-value of previous board/afterstate using this afterstate's value.
-        }
 
 
-        /* Check whether X has won, lost, if there's a draw, or
-            if the game hasn't ended yet. */
+        /* Check whether X has won, if there's a draw, or
+            if the game hasn't ended yet. X cannot have
+            lost after its own move. */
         gameResult = getGameResult(currentBoard);
-
-        
         if (gameResult == "not ended"){
             /* Save the currentBoard in previousBoard, so that its
-            Q-value can be updated in the next step, i.e. after
-            the opponent has reacted and X has chosen a new
-            afterstate. */
+                Q-value can be updated after O has made a move. */
             previousBoard = currentBoard;
 
             /* Let the opponent select his action and update the board. */
@@ -45,25 +39,30 @@ void learningLoop(struct parameterValues parameter_values){
             printBoard(currentBoard);
             std::cout << "\n";
 
+            /* Check if after O's move X has now lost, or if
+                the game hasn't ended. A win for X or a draw
+                aren't possible after O's move. */
             gameResult = getGameResult(currentBoard);
-            if (gameResult == "X"){
-                std::cout << "WIN\n";
-                exit(0);
+
+            if (gameResult == "not ended"){
+                /* Game hasn't ended, update previous board/afterstate q-value with the 
+                    q-value of the best possible next afterstate as the target. */
+                updateAfterstateQValue(parameter_values, previousBoard, qValueTableXAfterStates, getQValue(findBestAfterstate(currentBoard, qValueTableXAfterStates), qValueTableXAfterStates));
             } else if (gameResult == "O"){
-                std::cout << "LOSE\n";
+                /* Lost, update previous board/afterstate q-value with -1 as target, start new run. */
+                std::cout << "LOSS\n";
+                updateAfterstateQValue(parameter_values, previousBoard, qValueTableXAfterStates, -1);
                 exit(0);
             }
         } else if (gameResult == "X"){
-            //won, (update with +1? and) start new run
+            /* Won, afterstate already has value 1, start new run. */
             std::cout << "WIN\n";
-            exit(0);
-        } else if (gameResult == "O"){
-            //lost, (update with -1? and) start new run
-            std::cout << "LOSE\n";
+            std::cout << qValueTableXAfterStates[currentBoard] << "\n";
             exit(0);
         } else if (gameResult == "draw"){
-            //draw, (update with 0? and) start new run
+            /* Draw, afterstate already has value 0, start new run. */
             std::cout << "DRAW\n";
+            std::cout << qValueTableXAfterStates[currentBoard] << "\n";
             exit(0);
         }
 
