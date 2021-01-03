@@ -6,8 +6,28 @@
 #include "parameterValuesStruct.hpp"
 #include "general-functions.hpp"
 
+/* Function that checks if the input board state is an afterstate
+    from the perspective of X, i.e. one more Xs than Os should be
+    on the board. */ 
+bool checkIfXAfterState(std::vector<std::string> newBoard){
+    int xCount = 0;
+    int oCount = 0;
+    for (int i = 0; i < 9; i++){
+        if (newBoard[i] == "X"){
+            xCount += 1;
+        } else if (newBoard[i] == "O"){
+            oCount += 1;
+        }
+    }
 
-std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, double> qValueTable){
+    if (xCount == (oCount + 1)){
+        return true;
+    }
+    return false;
+}
+
+/* Function that selects the next afterstate. */
+std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, double> qValueTableXAfterStates){
     std::vector<std::string> bestAfterstate = {"e", "e", "e", "e", "e", "e", "e", "e", "e"};
     double bestQValue = -10000;
     double newQValue = 0;
@@ -21,7 +41,7 @@ std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoa
             an X there. */
         if (currentBoard[i] == "e"){
             possibleNewBoard[i] = "X";
-            newQValue = getQValue(possibleNewBoard, qValueTable);
+            newQValue = getQValue(possibleNewBoard, qValueTableXAfterStates);
             /* If the Q-value for this afterstate is better than
                 the previous best, make this afterstate the new best. */
             if (newQValue > bestQValue){
@@ -37,15 +57,17 @@ std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoa
 /* Function that creates a q-value table for each possible board
     state. Can probably be used to update afterstates for both
     player X and player O, as those don't overlap. */
-std::map<std::vector<std::string>, double> generateQValueTable(){
-    std::map<std::vector<std::string>, double> qValueTable;
+std::map<std::vector<std::string>, double> generateQValueTableXAfterStates(){
+    std::map<std::vector<std::string>, double> qValueTableXAfterStates;
     std::vector<std::string> newBoard = {"e", "e", "e", "e", "e", "e", "e", "e", "e"};
     std::vector<std::string> possibleSymbols = {"e", "X", "O"};
 
+    int xCount = 0;
+    int oCount = 0;
     /* There's probably a better way to do this ...
-        If needed, don't even use the newBoards that
-        e.g. have more Os than Xs, or other impossible
-        board states (or even only afterstates for X.*/
+        Only boards that have exactly one more X than
+        the number of Os are put into the table, as
+        only those are afterstates for X. */
     for (int i = 0; i < 3; i++){
         newBoard[8] = possibleSymbols[i];
         for (int j = 0; j < 3; j++){
@@ -64,7 +86,9 @@ std::map<std::vector<std::string>, double> generateQValueTable(){
                                     newBoard[1] = possibleSymbols[p];
                                     for (int q = 0; q < 3; q++){
                                         newBoard[0] = possibleSymbols[q];
-                                        qValueTable[newBoard] = 0;
+                                        if (checkIfXAfterState(newBoard)){
+                                            qValueTableXAfterStates[newBoard] = 0;        
+                                        }
                                     }
                                 }
                             }
@@ -75,7 +99,7 @@ std::map<std::vector<std::string>, double> generateQValueTable(){
         }
     }
 
-    return qValueTable;
+    return qValueTableXAfterStates;
 } 
 
 
