@@ -6,7 +6,8 @@
 struct parameterValues{
     int RLAlg;
     int explorationAlg;
-    int steps;
+    int ammOfRuns;
+    int gamesPerRun;
     double alpha;
     double gamma;
 };

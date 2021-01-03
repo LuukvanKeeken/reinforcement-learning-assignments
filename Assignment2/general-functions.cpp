@@ -239,8 +239,11 @@ void initialiseExperiment(struct parameterValues &parameter_values){
     std::cout << "\nPlease choose the exploration/exploitation algorithm you want to use:\n    0) Upper-Confidence-Bound\n    1) Gradient-based\n";
     std::cin >> parameter_values.explorationAlg;
 
-    std::cout << "\nPlease declare the amount of steps:\n";
-    std::cin >> parameter_values.steps;
+    std::cout << "\nPlease declare the amount of runs:\n";
+    std::cin >> parameter_values.ammOfRuns;
+
+    std::cout << "\nPlease declare the amount of games to be played:\n";
+    std::cin >> parameter_values.gamesPerRun;
 
     std::cout << "\nPlease declare the value for alpha:\n";
     std::cin >> parameter_values.alpha;
@@ -264,6 +267,45 @@ void printBoard(std::vector<std::string> board){
     std::cout << " " << board[6] << "|";
     std::cout << board[7] << "|";
     std::cout << board[8] << "\n";
+}
+
+/* Function that calculates and prints the mean and standard deviation
+ * of the amount of games won/lost/drawn for all runs. */
+void printMeanAndStandardDeviation(std::vector<std::vector<int>> sumWonLostDrawCount){
+    double meanWon = 0;
+    double meanLost = 0;
+    double meanDraw = 0;
+    for (int i = 0; i < sumWonLostDrawCount.size(); i++){
+        meanWon += sumWonLostDrawCount[i][0];
+        meanLost += sumWonLostDrawCount[i][1];
+        meanDraw += sumWonLostDrawCount[i][2];
+    }
+    meanWon /= sumWonLostDrawCount.size();
+    meanLost /= sumWonLostDrawCount.size();
+    meanDraw /= sumWonLostDrawCount.size();
+
+    std::cout << "Mean amount of games won: " << meanWon << "\n";
+    std::cout << "Mean amount of games lost: " << meanLost << "\n";
+    std::cout << "Mean amount of games draw: " << meanDraw << "\n";
+
+    double sumOfSquaredDifferencesWon = 0;
+    double sumOfSquaredDifferencesLost = 0;
+    double sumOfSquaredDifferencesDraw = 0;
+    for (int i = 0; i < sumWonLostDrawCount.size(); i++){
+        sumOfSquaredDifferencesWon += pow(sumWonLostDrawCount[i][0] - meanWon, 2);
+        sumOfSquaredDifferencesLost += pow(sumWonLostDrawCount[i][1] - meanLost, 2);
+        sumOfSquaredDifferencesDraw += pow(sumWonLostDrawCount[i][2] - meanDraw, 2);
+    }
+    sumOfSquaredDifferencesWon /= sumWonLostDrawCount.size();
+    sumOfSquaredDifferencesLost /= sumWonLostDrawCount.size();
+    sumOfSquaredDifferencesDraw /= sumWonLostDrawCount.size();
+
+    double standardDeviationWon = sqrt(sumOfSquaredDifferencesWon);
+    double standardDeviationLost = sqrt(sumOfSquaredDifferencesLost);
+    double standardDeviationDraw = sqrt(sumOfSquaredDifferencesDraw);
+    std::cout << "Standard deviation amount of games won: " << standardDeviationWon << "\n";
+    std::cout << "Standard deviation amount of games lost: " << standardDeviationLost << "\n";
+    std::cout << "Standard deviation amount of games drawn: " << standardDeviationDraw << "\n";
 }
 
 /* Function that updates the Q-value for the given afterState, based on the
