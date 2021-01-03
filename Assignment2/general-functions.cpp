@@ -180,3 +180,19 @@ void initialiseExperiment(struct parameterValues &parameter_values){
     std::cin >> parameter_values.steps;
 }
 
+/* Function that prints a board. */
+void printBoard(std::vector<std::string> board){
+    for (int i = 0; i < 3; i++){
+        std::cout << board[i];
+    }
+    std::cout << "\n";
+    for (int i = 3; i < 6; i++){
+        std::cout << board[i];
+    }
+    std::cout << "\n";
+    for (int i = 6; i < 9; i++){
+        std::cout << board[i];
+    }
+    std::cout << "\n";
+}
+
