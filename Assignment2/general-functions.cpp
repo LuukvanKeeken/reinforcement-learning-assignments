@@ -6,6 +6,7 @@
 #include "parameterValuesStruct.hpp"
 #include "general-functions.hpp"
 #include <random>
+#include <fstream>
 
 /* Function that selects the action by the opponent.
     For now, only random selection is implemented. */
@@ -76,6 +77,22 @@ std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoa
 
     return bestAfterstate;
 }
+
+
+/* Function that outputs the won/lost/draw percentages for each game
+    to a csv file. */
+void createOutputFile(std::vector<std::vector<double>> averagesWonLostDraw, struct parameterValues parameter_values){
+    std::ofstream file;
+    file.open("output-files/testFile.csv");
+
+    file << "game number,percentage won,percentage lost,percentage draw\n";
+    for (int i = 0; i < parameter_values.gamesPerRun; i++){
+        file << i+1 << "," << averagesWonLostDraw[i][0] << "," << averagesWonLostDraw[i][1] << "," << averagesWonLostDraw[i][2] << "\n";
+    }
+
+    file.close();
+}
+
 
 /* Function that finds the best possible afterstate from the current board. */
 std::vector<std::string> findBestAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, double> qValueTableXAfterStates){

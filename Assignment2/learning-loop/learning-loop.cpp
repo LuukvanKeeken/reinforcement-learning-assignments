@@ -139,4 +139,6 @@ void learningLoop(struct parameterValues parameter_values){
     }
 
     printMeanAndStandardDeviation(sumWonLostDrawCount);
+
+    createOutputFile(sumsWonLostDraw, parameter_values);
 }
