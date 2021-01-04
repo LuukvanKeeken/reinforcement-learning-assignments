@@ -84,7 +84,6 @@ void learningLoop(struct parameterValues parameter_values){
                     updateAfterstateQValue(parameter_values, previousBoard, qValueTableXAfterStates, -1);
                     currentBoard = {"e", "e", "e", "e", "e", "e", "e", "e", "e"};
                     gameCounter += 1;
-                    std::cout << "Run: " << run << ", game: " << gameCounter << "\n";
                     wonLostDraw.push_back({0.0, 1.0, 0.0});
                     wonLostDrawCount[1] += 1;
                 }
@@ -93,7 +92,6 @@ void learningLoop(struct parameterValues parameter_values){
                 //std::cout << "WIN\n\n";
                 currentBoard = {"e", "e", "e", "e", "e", "e", "e", "e", "e"};
                 gameCounter += 1;
-                std::cout << "Run: " << run << ", game: " << gameCounter << "\n";
                 wonLostDraw.push_back({1.0, 0.0, 0.0});
                 wonLostDrawCount[0] += 1;
             } else if (gameResult == "draw"){
@@ -101,7 +99,6 @@ void learningLoop(struct parameterValues parameter_values){
                 //std::cout << "DRAW\n\n";
                 currentBoard = {"e", "e", "e", "e", "e", "e", "e", "e", "e"};
                 gameCounter += 1;
-                std::cout << "Run: " << run << ", game: " << gameCounter << "\n";
                 wonLostDraw.push_back({0.0, 0.0, 1.0});
                 wonLostDrawCount[2] += 1;
             }
