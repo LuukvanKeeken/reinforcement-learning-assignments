@@ -2,6 +2,7 @@
 #include <vector>
 #include "../parameterValuesStruct.hpp"
 #include "../general-functions.hpp"
+#include <ctime>
 
 /* Function that lets the agent play a certain amount of games
     (parameter_values.gamesPerRun), and repeats this for a certain

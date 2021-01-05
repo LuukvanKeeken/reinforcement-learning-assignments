@@ -7,6 +7,7 @@
 #include "general-functions.hpp"
 #include <random>
 #include <fstream>
+#include <ctime>
 
 std::default_random_engine generator(time(0));
 
