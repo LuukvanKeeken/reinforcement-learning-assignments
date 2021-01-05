@@ -37,6 +37,7 @@ void learningLoop(struct parameterValues parameter_values){
     std::vector<std::string> previousBoard;
     std::string gameResult;
     int gameCounter = 0;
+    int steps = 0;
 
     for (int run = 0; run < parameter_values.ammOfRuns; run++){
         /* Initialise the q-value table for X's afterstates. */
@@ -47,6 +48,7 @@ void learningLoop(struct parameterValues parameter_values){
         
         std::cout << "Start of run " << run << "\n";
         while (gameCounter < parameter_values.gamesPerRun){
+            steps += 1;
             /* Select the next board from the possible afterstates. */
             currentBoard = chooseNewAfterstate(currentBoard, qValueTableXAfterStates);
             // std::cout << "X PLAYS:\n";
@@ -65,6 +67,7 @@ void learningLoop(struct parameterValues parameter_values){
 
                 /* Let the opponent select his action and update the board. */
                 currentBoard = actionByO(currentBoard);
+                steps += 1;
                 // std::cout << "O PLAYS:\n";
                 // printBoard(currentBoard);
                 // std::cout << "\n";
@@ -141,4 +144,8 @@ void learningLoop(struct parameterValues parameter_values){
     printMeanAndStandardDeviation(sumWonLostDrawCount);
 
     createOutputFile(sumsWonLostDraw, parameter_values);    
+
+    std::cout << "Total amount of steps: " << steps << "\n";
+    std::cout << "Average amount of steps per run: " << (double)steps/(double)parameter_values.ammOfRuns << "\n";
+    std::cout << "Average amount of steps per game: " << ((double)steps/(double)parameter_values.ammOfRuns)/(double)parameter_values.gamesPerRun << "\n";
 }

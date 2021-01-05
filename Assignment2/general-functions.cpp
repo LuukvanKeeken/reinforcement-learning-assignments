@@ -8,23 +8,46 @@
 #include <random>
 #include <fstream>
 
-/* Function that selects the action by the opponent.
-    For now, only random selection is implemented. */
-std::vector<std::string> actionByO(std::vector<std::string> currentBoard){
-    /* Random action by O. Find all places that are
-        still empty and put them in one vector. Then
-        get a random index of that vector, the value 
-        at that index is the location of the new O. */
-    std::vector<int> freePlaces;
-    for (int i = 0; i < 9; i++){
-        if (currentBoard[i] == "e"){
-            freePlaces.push_back(i);
-        }
-    }
-    int selectedPlace = rand() % freePlaces.size();
-    currentBoard[freePlaces[selectedPlace]] = "O";
-    return currentBoard;
+std::default_random_engine generator(time(0));
 
+/* Function that selects the action by the opponent.
+    Minimax is used with probability 0.8, random selection
+    is used with probability 0.2. */
+std::vector<std::string> actionByO(std::vector<std::string> currentBoard){
+    /* With probability 0.2, the opponent chooses a random action.
+        Otherwise, it uses the minimax algorithm. */
+    if (getRandomNumberFromRangeUniform(0, 1) < 0.2){
+        /* Random action by O. Find all places that are
+            still empty and put them in one vector. Then
+            get a random index of that vector, the value 
+            at that index is the location of the new O. */
+        std::vector<int> freePlaces;
+        for (int i = 0; i < 9; i++){
+            if (currentBoard[i] == "e"){
+                freePlaces.push_back(i);
+            }
+        }
+        int selectedPlace = rand() % freePlaces.size();
+        currentBoard[freePlaces[selectedPlace]] = "O";
+        return currentBoard;
+    } else {
+        int bestScore = 10000;
+        int newScore = 0;
+        std::vector<std::string> bestNewBoard;
+        std::vector<std::string> possibleNewBoard;
+        for (int i = 0; i < 9; i++){
+            if (currentBoard[i] == "e"){
+                possibleNewBoard = currentBoard;
+                possibleNewBoard[i] = "O";
+                newScore = minimax(possibleNewBoard, 0, true);
+                if (newScore < bestScore){
+                    bestScore = newScore;
+                    bestNewBoard = possibleNewBoard;
+                }
+            }
+        }
+        return bestNewBoard;
+    }
 }
 
 
@@ -247,6 +270,13 @@ double getQValue(std::vector<std::string> afterState, std::map<std::vector<std::
     return qValueTable[afterState];
 }
 
+
+/* Function that returns a random decimal number [lower_limit, upper_limit]. */
+double getRandomNumberFromRangeUniform(int lower_limit, int upper_limit){
+    std::uniform_real_distribution<double> distribution(lower_limit, upper_limit);
+    return distribution(generator);
+}
+
 /* Function that asks the user to provide the parameter values before
     starting the learning phase. */
 void initialiseExperiment(struct parameterValues &parameter_values){
@@ -269,6 +299,51 @@ void initialiseExperiment(struct parameterValues &parameter_values){
     std::cin >> parameter_values.gamma;
 }
 
+/* Minimax algorithm. */
+int minimax(std::vector<std::string> board, int depth, bool isMaximising){
+    std::string gameResult = getGameResult(board);
+    if (gameResult != "not ended"){
+        if (gameResult == "X"){
+            return 1;
+        } else if (gameResult == "O"){
+            return -1;
+        } else if (gameResult == "draw"){
+            return 0;
+        }
+    }
+
+    if (isMaximising){
+        int bestScore = -10000;
+        int newScore = 0;
+        std::vector<std::string> possibleNewBoard;
+        for (int i = 0; i < 9; i++){
+            if (board[i] == "e"){
+                possibleNewBoard = board;
+                possibleNewBoard[i] = "X";
+                newScore = minimax(possibleNewBoard, depth+1, false);
+                if (newScore > bestScore){
+                    bestScore = newScore;
+                }
+            }
+        }
+        return bestScore;
+    } else {
+        int bestScore = 10000;
+        int newScore = 0;
+        std::vector<std::string> possibleNewBoard;
+        for (int i = 0; i < 9; i++){
+            if (board[i] == "e"){
+                possibleNewBoard = board;
+                possibleNewBoard[i] = "O";
+                newScore = minimax(possibleNewBoard, depth+1, true);
+                if (newScore < bestScore){
+                    bestScore = newScore;
+                }
+            }
+        }
+        return bestScore;
+    }
+}
 
 
 /* Function that prints a board. */
