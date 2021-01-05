@@ -16,7 +16,7 @@ std::default_random_engine generator(time(0));
 std::vector<std::string> actionByO(std::vector<std::string> currentBoard){
     /* With probability 0.2, the opponent chooses a random action.
         Otherwise, it uses the minimax algorithm. */
-    if (getRandomNumberFromRangeUniform(0, 1) < 0.2){
+    if (getRandomNumberFromRangeUniform(0, 1) < 0.4){
         /* Random action by O. Find all places that are
             still empty and put them in one vector. Then
             get a random index of that vector, the value 
