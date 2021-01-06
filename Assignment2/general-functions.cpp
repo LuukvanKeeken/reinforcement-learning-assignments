@@ -331,7 +331,7 @@ void initialiseExperiment(struct parameterValues &parameter_values){
         std::cin >> parameter_values.oValue;
     } else
     {
-        parameter_values.cValue = 5;
+        parameter_values.oValue = 5;
     }
     
     std::cout << "\nPlease declare the amount of runs:\n";
