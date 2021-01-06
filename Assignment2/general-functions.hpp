@@ -4,10 +4,10 @@
 
 std::vector<std::string> actionByO(std::vector<std::string> currentBoard);
 bool checkIfXAfterState(std::vector<std::string> newBoard);
-std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates, int t, double c, double o, int method);
+std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates, int t, struct parameterValues parameter_values);
 void createOutputFile(std::vector<std::vector<double>> averagesWonLostDraw, struct parameterValues parameter_values);
 std::vector<std::string> findBestAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates);
-std::map<std::vector<std::string>, std::vector<double>> generateQValueTableXAfterStates(int method, double oVal);
+std::map<std::vector<std::string>, std::vector<double>> generateQValueTableXAfterStates(struct parameterValues parameter_values);
 std::string getGameResult(std::vector<std::string> currentBoard);
 double getQValue(std::vector<std::string> afterState, std::map<std::vector<std::string>, std::vector<double>> qValueTable);
 double getRandomNumberFromRangeUniform(int lower_limit, int upper_limit);

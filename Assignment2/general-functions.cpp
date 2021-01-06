@@ -76,7 +76,7 @@ bool checkIfXAfterState(std::vector<std::string> newBoard){
 
 /* Function that selects the next afterstate. Doesn't necessarily select the best afterstate,
     as there is a balance between exploration and exploitation. */
-std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates, int t, double c, double o, int method){
+std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates, int t, struct parameterValues parameter_values){
     std::vector<std::string> bestAfterstate;
     double bestQValue = -10000;
     double newQValue = 0;
@@ -92,19 +92,19 @@ std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoa
         if (currentBoard[i] == "e"){
             possibleNewBoard[i] = "X";
             newQValue = getQValue(possibleNewBoard, qValueTableXAfterStates);
-            count = getQCount(possibleNewBoard, qValueTableXAfterStates);
+            
+            /* If UCB is used, add the uncertainty to the Q-value. */
+            if (parameter_values.explorationAlg == 0){
+                count = getQCount(possibleNewBoard, qValueTableXAfterStates);
+                if (count == 0){
+                    newQValue = 1000;
+                } else{
+                    newQValue = uCb(newQValue, parameter_values.cValue, count, t);
+                }
+            } 
+
             /* If the Q-value for this afterstate is better than
                 the previous best, make this afterstate the new best. */
-            if (method == 0)
-            {
-                if (count == 0)
-                {
-                    newQValue = 1000;
-                } else
-                {
-                    newQValue = uCb(newQValue, c, count, t);
-                }
-            }            
             if (newQValue > bestQValue){
                 bestQValue = newQValue;
                 bestAfterstate = possibleNewBoard;
@@ -174,12 +174,13 @@ std::vector<std::string> findBestAfterstate(std::vector<std::string> currentBoar
 /* Function that creates a q-value table for each possible board
     state. Can probably be used to update afterstates for both
     player X and player O, as those don't overlap. */
-std::map<std::vector<std::string>, std::vector<double>> generateQValueTableXAfterStates(int method, double oVal){
+std::map<std::vector<std::string>, std::vector<double>> generateQValueTableXAfterStates(struct parameterValues parameter_values){
     std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates;
     std::vector<std::string> newBoard = {"e", "e", "e", "e", "e", "e", "e", "e", "e"};
     std::vector<std::string> possibleSymbols = {"e", "X", "O"};
     int xCount = 0;
     int oCount = 0;
+    std::string gameResult;
     /* There's probably a better way to do this ...
         Only boards that have exactly one more X than
         the number of Os are put into the table, as
@@ -206,19 +207,22 @@ std::map<std::vector<std::string>, std::vector<double>> generateQValueTableXAfte
                                             X's perspective. */
                                         if (checkIfXAfterState(newBoard)){
                                             /* If in this board state X has won, give it
-                                                value 1. It doesn't matter too much if it
+                                                value 1. If the game state is a draw,
+                                                give it value 0. If OIV is being used,
+                                                give any other afterstates the requested
+                                                parameter value. Else, give it value 0. 
+                                                It doesn't matter too much if it
                                                 is invalid, as those won't be reached in 
                                                 the game. */
-                                            if (getGameResult(newBoard) == "X"){
+                                            gameResult = getGameResult(newBoard);
+                                            if (gameResult == "X"){
                                                 qValueTableXAfterStates[newBoard] = {1,0};
-                                            } else {
-                                                if (method == 1)
-                                                {
-                                                    qValueTableXAfterStates[newBoard] = {oVal,0}; 
-                                                } else
-                                                {
-                                                    qValueTableXAfterStates[newBoard] = {0,0};
-                                                }
+                                            } else if (gameResult == "draw"){
+                                                qValueTableXAfterStates[newBoard] = {0,0};
+                                            } else if (parameter_values.explorationAlg == 1){
+                                                qValueTableXAfterStates[newBoard] = {parameter_values.oValue,0}; 
+                                            } else{
+                                                qValueTableXAfterStates[newBoard] = {0,0};
                                             }       
                                         }
                                     }
@@ -316,21 +320,17 @@ void initialiseExperiment(struct parameterValues &parameter_values){
     std::cout << "\nPlease choose the exploration/exploitation algorithm you want to use:\n    0) Upper-Confidence-Bound\n    1) Optimistic starting values\n";
     std::cin >> parameter_values.explorationAlg;
 
-    if (parameter_values.explorationAlg == 0)
-    {
+    if (parameter_values.explorationAlg == 0){
         std::cout << "\nPlease choose the value for c (UCB Algorithm) you want to use:\n";
         std::cin >> parameter_values.cValue;
-    } else
-    {
+    } else{
         parameter_values.cValue = 5;
     }
 
-      if (parameter_values.explorationAlg == 1)
-    {
+    if (parameter_values.explorationAlg == 1){
         std::cout << "\nPlease choose the optimistic starting values you want to use (between 0 and 1):\n";
         std::cin >> parameter_values.oValue;
-    } else
-    {
+    } else{
         parameter_values.oValue = 5;
     }
     
