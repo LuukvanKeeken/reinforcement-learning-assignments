@@ -42,7 +42,7 @@ void learningLoop(struct parameterValues parameter_values){
     int stepsTotal = 0;
     int steps = 0;
     int method = 0;
-    double c = 5;
+    double c = parameter_values.cValue;
 
     for (int run = 0; run < parameter_values.ammOfRuns; run++){
         /* Initialise the q-value table for X's afterstates. */

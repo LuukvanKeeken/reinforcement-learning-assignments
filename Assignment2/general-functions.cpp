@@ -311,6 +311,15 @@ void initialiseExperiment(struct parameterValues &parameter_values){
     std::cout << "\nPlease choose the exploration/exploitation algorithm you want to use:\n    0) Upper-Confidence-Bound\n    1) Gradient-based\n";
     std::cin >> parameter_values.explorationAlg;
 
+    if (parameter_values.explorationAlg == 0)
+    {
+        std::cout << "\nPlease choose the value for c (UCB Algorithm) you want to use:\n";
+        std::cin >> parameter_values.cValue;
+    } else
+    {
+        parameter_values.cValue = 5;
+    }
+    
     std::cout << "\nPlease declare the amount of runs:\n";
     std::cin >> parameter_values.ammOfRuns;
 
