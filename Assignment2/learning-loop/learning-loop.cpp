@@ -3,6 +3,7 @@
 #include "../parameterValuesStruct.hpp"
 #include "../general-functions.hpp"
 #include <ctime>
+#include <cmath>
 
 /* Function that lets the agent play a certain amount of games
     (parameter_values.gamesPerRun), and repeats this for a certain
@@ -40,6 +41,8 @@ void learningLoop(struct parameterValues parameter_values){
     int gameCounter = 0;
     int stepsTotal = 0;
     int steps = 0;
+    int method = 0;
+    double c = 5;
 
     for (int run = 0; run < parameter_values.ammOfRuns; run++){
         /* Initialise the q-value table for X's afterstates. */
@@ -51,8 +54,9 @@ void learningLoop(struct parameterValues parameter_values){
         std::cout << "Start of run " << run << "\n";
         while (gameCounter < parameter_values.gamesPerRun){
             steps += 1;
-            /* Select the next board from the possible afterstates. */
-            currentBoard = chooseNewAfterstate(currentBoard, qValueTableXAfterStates);
+            /* Select the next board from the possible afterstates and adds to the count: number of times that board has been selected. */
+            method = parameter_values.explorationAlg;
+            currentBoard = chooseNewAfterstate(currentBoard, qValueTableXAfterStates, steps, c, method);
             qValueTableXAfterStates[currentBoard][1]+=1;
             // std::cout << "X PLAYS:\n";
             // printBoard(currentBoard);

@@ -8,6 +8,7 @@
 #include <random>
 #include <fstream>
 #include <ctime>
+#include <cmath>
 
 std::default_random_engine generator(time(0));
 
@@ -75,10 +76,11 @@ bool checkIfXAfterState(std::vector<std::string> newBoard){
 
 /* Function that selects the next afterstate. Doesn't necessarily select the best afterstate,
     as there is a balance between exploration and exploitation. */
-std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates){
+std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates, int t, double c, int method){
     std::vector<std::string> bestAfterstate;
     double bestQValue = -10000;
     double newQValue = 0;
+    int count = 0;
     std::vector<std::string> possibleNewBoard;
     /* Basic selection, without any exploration. Go through all
         positions to check if an X can be placed there. */
@@ -90,8 +92,19 @@ std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoa
         if (currentBoard[i] == "e"){
             possibleNewBoard[i] = "X";
             newQValue = getQValue(possibleNewBoard, qValueTableXAfterStates);
+            count = getQCount(possibleNewBoard, qValueTableXAfterStates);
             /* If the Q-value for this afterstate is better than
                 the previous best, make this afterstate the new best. */
+            if (method == 0)
+            {
+                if (count == 0)
+                {
+                    newQValue = 1000;
+                } else
+                {
+                    newQValue = uCb(newQValue, c, count, t);
+                }
+            }
             if (newQValue > bestQValue){
                 bestQValue = newQValue;
                 bestAfterstate = possibleNewBoard;
@@ -102,6 +115,17 @@ std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoa
     return bestAfterstate;
 }
 
+/* Function that returns the Count of the input state.*/
+double getQCount(std::vector<std::string> afterState, std::map<std::vector<std::string>, std::vector<double>> qValueTable){
+    return qValueTable[afterState][1];
+}
+
+
+double uCb(double qValue, double c, int count, double steps) {
+    double uCbValue;
+    uCbValue = qValue + c*sqrt((log(steps))/count);
+    return uCbValue;
+}
 
 /* Function that outputs the won/lost/draw percentages for each game
     to a csv file. */
