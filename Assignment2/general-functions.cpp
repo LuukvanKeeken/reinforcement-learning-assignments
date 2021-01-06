@@ -402,7 +402,10 @@ void printMeanAndStandardDeviation(std::vector<std::vector<int>> sumWonLostDrawC
 
 /* Function that updates the Q-value for the given afterState, based on the
     the Q-value of the best afterState than can be reached after O has made 
-    a move. In tic-tac-toe there are no rewards associated with single moves,
+    a move (Q-learning). If Sarsa is chosen, the Q-value of the 
+    afterstate isn't updated with the best possible afterstate after O has
+    made a move, but the actual next afterstate chosen by X.
+    In tic-tac-toe there are no rewards associated with single moves,
     only +1, -1, or 0 at the end. That's why there is no reward factor in this
     update equation. */
 void updateAfterstateQValue(struct parameterValues parameter_values, std::vector<std::string> afterState, std::map<std::vector<std::string>, double> &qValueTableXAfterStates, double bestAfterAfterstateQValue){
