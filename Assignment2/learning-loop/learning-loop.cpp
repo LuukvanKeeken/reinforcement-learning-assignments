@@ -41,13 +41,13 @@ void learningLoop(struct parameterValues parameter_values){
     int gameCounter = 0;
     int stepsTotal = 0;
     int steps = 0;
-    int method = 0;
+    int method = parameter_values.explorationAlg;
     double c = parameter_values.cValue;
+    double o = parameter_values.oValue;
 
     for (int run = 0; run < parameter_values.ammOfRuns; run++){
         /* Initialise the q-value table for X's afterstates. */
-        qValueTableXAfterStates = generateQValueTableXAfterStates();
-        
+        qValueTableXAfterStates = generateQValueTableXAfterStates(method, o);
         /* Board is initialised with each cell empty ("e"). */
         currentBoard = {"e", "e", "e", "e", "e", "e", "e", "e", "e"};
         
@@ -55,8 +55,7 @@ void learningLoop(struct parameterValues parameter_values){
         while (gameCounter < parameter_values.gamesPerRun){
             steps += 1;
             /* Select the next board from the possible afterstates and adds to the count: number of times that board has been selected. */
-            method = parameter_values.explorationAlg;
-            currentBoard = chooseNewAfterstate(currentBoard, qValueTableXAfterStates, steps, c, method);
+            currentBoard = chooseNewAfterstate(currentBoard, qValueTableXAfterStates, steps, c, o, method);
             qValueTableXAfterStates[currentBoard][1]+=1;
             // std::cout << "X PLAYS:\n";
             // printBoard(currentBoard);

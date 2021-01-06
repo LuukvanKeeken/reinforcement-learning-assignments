@@ -76,7 +76,7 @@ bool checkIfXAfterState(std::vector<std::string> newBoard){
 
 /* Function that selects the next afterstate. Doesn't necessarily select the best afterstate,
     as there is a balance between exploration and exploitation. */
-std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates, int t, double c, int method){
+std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates, int t, double c, double o, int method){
     std::vector<std::string> bestAfterstate;
     double bestQValue = -10000;
     double newQValue = 0;
@@ -104,7 +104,7 @@ std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoa
                 {
                     newQValue = uCb(newQValue, c, count, t);
                 }
-            }
+            }            
             if (newQValue > bestQValue){
                 bestQValue = newQValue;
                 bestAfterstate = possibleNewBoard;
@@ -174,11 +174,10 @@ std::vector<std::string> findBestAfterstate(std::vector<std::string> currentBoar
 /* Function that creates a q-value table for each possible board
     state. Can probably be used to update afterstates for both
     player X and player O, as those don't overlap. */
-std::map<std::vector<std::string>, std::vector<double>> generateQValueTableXAfterStates(){
+std::map<std::vector<std::string>, std::vector<double>> generateQValueTableXAfterStates(int method, double oVal){
     std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates;
     std::vector<std::string> newBoard = {"e", "e", "e", "e", "e", "e", "e", "e", "e"};
     std::vector<std::string> possibleSymbols = {"e", "X", "O"};
-
     int xCount = 0;
     int oCount = 0;
     /* There's probably a better way to do this ...
@@ -213,7 +212,13 @@ std::map<std::vector<std::string>, std::vector<double>> generateQValueTableXAfte
                                             if (getGameResult(newBoard) == "X"){
                                                 qValueTableXAfterStates[newBoard] = {1,0};
                                             } else {
-                                                qValueTableXAfterStates[newBoard] = {0,0}; 
+                                                if (method == 1)
+                                                {
+                                                    qValueTableXAfterStates[newBoard] = {oVal,0}; 
+                                                } else
+                                                {
+                                                    qValueTableXAfterStates[newBoard] = {0,0};
+                                                }
                                             }       
                                         }
                                     }
@@ -308,13 +313,22 @@ void initialiseExperiment(struct parameterValues &parameter_values){
     std::cout << "Please choose the reinforcement learning algorithm you want to use:\n    0) Q-learning\n    1) Sarsa\n";
     std::cin >> parameter_values.RLAlg;
 
-    std::cout << "\nPlease choose the exploration/exploitation algorithm you want to use:\n    0) Upper-Confidence-Bound\n    1) Gradient-based\n";
+    std::cout << "\nPlease choose the exploration/exploitation algorithm you want to use:\n    0) Upper-Confidence-Bound\n    1) Optimistic starting values\n";
     std::cin >> parameter_values.explorationAlg;
 
     if (parameter_values.explorationAlg == 0)
     {
         std::cout << "\nPlease choose the value for c (UCB Algorithm) you want to use:\n";
         std::cin >> parameter_values.cValue;
+    } else
+    {
+        parameter_values.cValue = 5;
+    }
+
+      if (parameter_values.explorationAlg == 1)
+    {
+        std::cout << "\nPlease choose the optimistic starting values you want to use (between 0 and 1):\n";
+        std::cin >> parameter_values.oValue;
     } else
     {
         parameter_values.cValue = 5;
