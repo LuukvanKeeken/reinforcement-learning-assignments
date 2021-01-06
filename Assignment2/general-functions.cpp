@@ -75,7 +75,7 @@ bool checkIfXAfterState(std::vector<std::string> newBoard){
 
 /* Function that selects the next afterstate. Doesn't necessarily select the best afterstate,
     as there is a balance between exploration and exploitation. */
-std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, double> qValueTableXAfterStates){
+std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates){
     std::vector<std::string> bestAfterstate;
     double bestQValue = -10000;
     double newQValue = 0;
@@ -119,7 +119,7 @@ void createOutputFile(std::vector<std::vector<double>> averagesWonLostDraw, stru
 
 
 /* Function that finds the best possible afterstate from the current board. */
-std::vector<std::string> findBestAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, double> qValueTableXAfterStates){
+std::vector<std::string> findBestAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates){
     std::vector<std::string> bestAfterstate;
     double bestQValue = -10000;
     double newQValue = 0;
@@ -150,8 +150,8 @@ std::vector<std::string> findBestAfterstate(std::vector<std::string> currentBoar
 /* Function that creates a q-value table for each possible board
     state. Can probably be used to update afterstates for both
     player X and player O, as those don't overlap. */
-std::map<std::vector<std::string>, double> generateQValueTableXAfterStates(){
-    std::map<std::vector<std::string>, double> qValueTableXAfterStates;
+std::map<std::vector<std::string>, std::vector<double>> generateQValueTableXAfterStates(){
+    std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates;
     std::vector<std::string> newBoard = {"e", "e", "e", "e", "e", "e", "e", "e", "e"};
     std::vector<std::string> possibleSymbols = {"e", "X", "O"};
 
@@ -187,9 +187,9 @@ std::map<std::vector<std::string>, double> generateQValueTableXAfterStates(){
                                                 is invalid, as those won't be reached in 
                                                 the game. */
                                             if (getGameResult(newBoard) == "X"){
-                                                qValueTableXAfterStates[newBoard] = 1;
+                                                qValueTableXAfterStates[newBoard] = {1,0};
                                             } else {
-                                                qValueTableXAfterStates[newBoard] = 0; 
+                                                qValueTableXAfterStates[newBoard] = {0,0}; 
                                             }       
                                         }
                                     }
@@ -267,8 +267,8 @@ std::string getGameResult(std::vector<std::string> currentBoard){
 }
 
 /* Function that returns the Q-value of the input afterstate.*/
-double getQValue(std::vector<std::string> afterState, std::map<std::vector<std::string>, double> qValueTable){
-    return qValueTable[afterState];
+double getQValue(std::vector<std::string> afterState, std::map<std::vector<std::string>, std::vector<double>> qValueTable){
+    return qValueTable[afterState][0];
 }
 
 
@@ -409,6 +409,6 @@ void printMeanAndStandardDeviation(std::vector<std::vector<int>> sumWonLostDrawC
     In tic-tac-toe there are no rewards associated with single moves,
     only +1, -1, or 0 at the end. That's why there is no reward factor in this
     update equation. */
-void updateAfterstateQValue(struct parameterValues parameter_values, std::vector<std::string> afterState, std::map<std::vector<std::string>, double> &qValueTableXAfterStates, double bestAfterAfterstateQValue){
-    qValueTableXAfterStates[afterState] += parameter_values.alpha*(parameter_values.gamma*bestAfterAfterstateQValue - qValueTableXAfterStates[afterState]);
+void updateAfterstateQValue(struct parameterValues parameter_values, std::vector<std::string> afterState, std::map<std::vector<std::string>, std::vector<double>> &qValueTableXAfterStates, double bestAfterAfterstateQValue){
+    qValueTableXAfterStates[afterState][0] += parameter_values.alpha*(parameter_values.gamma*bestAfterAfterstateQValue - qValueTableXAfterStates[afterState][0]);
 }

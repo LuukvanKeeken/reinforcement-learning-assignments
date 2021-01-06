@@ -33,7 +33,7 @@ void learningLoop(struct parameterValues parameter_values){
     
 
 
-    std::map<std::vector<std::string>, double> qValueTableXAfterStates;
+    std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates;
     std::vector<std::string> currentBoard;
     std::vector<std::string> previousBoard;
     std::string gameResult;
@@ -53,6 +53,7 @@ void learningLoop(struct parameterValues parameter_values){
             steps += 1;
             /* Select the next board from the possible afterstates. */
             currentBoard = chooseNewAfterstate(currentBoard, qValueTableXAfterStates);
+            qValueTableXAfterStates[currentBoard][1]+=1;
             // std::cout << "X PLAYS:\n";
             // printBoard(currentBoard);
             // std::cout << "\n";
