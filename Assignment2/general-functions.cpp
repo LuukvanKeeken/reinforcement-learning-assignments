@@ -78,6 +78,7 @@ bool checkIfXAfterState(std::vector<std::string> newBoard){
     as there is a balance between exploration and exploitation. */
 std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates, int t, struct parameterValues parameter_values){
     std::vector<std::string> bestAfterstate;
+    std::vector<std::vector<std::string>> candidateBoards;
     double bestQValue = -10000;
     double newQValue = 0;
     int count = 0;
@@ -104,15 +105,30 @@ std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoa
             } 
 
             /* If the Q-value for this afterstate is better than
-                the previous best, make this afterstate the new best. */
+                the previous best, make this afterstate the new best.
+                Randomly select among anyboards which share the best values. */
             if (newQValue > bestQValue){
+                candidateBoards.clear();
+                candidateBoards.push_back(possibleNewBoard);
                 bestQValue = newQValue;
-                bestAfterstate = possibleNewBoard;
-            }
+            } else {
+                if (newQValue == bestQValue){
+                    candidateBoards.push_back(possibleNewBoard); 
+                }
+            }    
         }
     }
+    if (candidateBoards.size() == 1){
+        return candidateBoards[0];
+    } else {
+        return boardSelection(candidateBoards, candidateBoards.size());
+    }
+}
 
-    return bestAfterstate;
+std::vector<std::string> boardSelection(std::vector<std::vector<std::string>> candidateBoards, int counter){
+    double randNum = getRandomNumberFromRangeUniform(0, counter);
+    int index = (int)(floor(randNum));
+    return candidateBoards[index];
 }
 
 /* Function that returns the Count of the input state.*/
