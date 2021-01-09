@@ -29,7 +29,7 @@ std::vector<std::string> actionByO(std::vector<std::string> currentBoard){
                 freePlaces.push_back(i);
             }
         }
-        int selectedPlace = rand() % freePlaces.size();
+        int selectedPlace = (int)getRandomNumberFromRangeUniform(0, freePlaces.size());
         currentBoard[freePlaces[selectedPlace]] = "O";
         return currentBoard;
     } else {
@@ -83,18 +83,41 @@ std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoa
     double newQValue = 0;
     int count = 0;
     std::vector<std::string> possibleNewBoard;
-    /* Basic selection, without any exploration. Go through all
-        positions to check if an X can be placed there. */
+
+    /* If the selected exploration algorithm is Epsilon-greedy, select
+        an afterstate randomly out of the current possibilities, with
+        probability parameter_values.eValue. Else, continue to find 
+        the best/greedy afterstate. */
+    if (parameter_values.explorationAlg == 2 && getRandomNumberFromRangeUniform(0, 1) < parameter_values.eValue){
+        std::vector<int> freePlaces;
+        for (int i = 0; i < 9; i++){
+            if (currentBoard[i] == "e"){
+                freePlaces.push_back(i);
+            }
+        }
+        int selectedPlace = (int)getRandomNumberFromRangeUniform(0, freePlaces.size());
+        currentBoard[freePlaces[selectedPlace]] = "X";
+        return currentBoard;
+    }
+    
+    /* Go through all board positions, and find the ones that are
+        still free. Then, find which of the possible afterstates
+        has the highest Q-value currently. If multiple afterstates
+        have the highest Q-value, select from them randomly. */
     for (int i = 0; i < 9; i++){
-        possibleNewBoard = currentBoard;
+    
         /* If the position is still free, look up the Q-value
             for the afterstate that is reached when placing
             an X there. */
         if (currentBoard[i] == "e"){
+            possibleNewBoard = currentBoard;
             possibleNewBoard[i] = "X";
             newQValue = getQValue(possibleNewBoard, qValueTableXAfterStates);
             
-            /* If UCB is used, add the uncertainty to the Q-value. */
+            /* If UCB is used, add the uncertainty to the Q-value, which is calculated
+                based on how many times the afterstate was previously selected, and the
+                amount of steps that have passed. If this afterstate was never selected,
+                it should immediately be selected, so it gets a value of 1000. */
             if (parameter_values.explorationAlg == 0){
                 count = getQCount(possibleNewBoard, qValueTableXAfterStates);
                 if (count == 0){
@@ -111,23 +134,27 @@ std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoa
                 candidateBoards.clear();
                 candidateBoards.push_back(possibleNewBoard);
                 bestQValue = newQValue;
-            } else {
-                if (newQValue == bestQValue){
-                    candidateBoards.push_back(possibleNewBoard); 
-                }
+            } else if (newQValue == bestQValue){
+                candidateBoards.push_back(possibleNewBoard); 
+                
             }    
         }
     }
+
+    /* If only one afterstate had the highest value, return it.
+        Else, select randomly from the multiple possibilities. */
     if (candidateBoards.size() == 1){
         return candidateBoards[0];
     } else {
-        return boardSelection(candidateBoards, candidateBoards.size());
+        return boardSelection(candidateBoards);
     }
 }
 
-std::vector<std::string> boardSelection(std::vector<std::vector<std::string>> candidateBoards, int counter){
-    double randNum = getRandomNumberFromRangeUniform(0, counter);
-    int index = (int)(floor(randNum));
+/* Function that randomly selects an afterstate out of multiple
+    afterstates in a vector. */
+std::vector<std::string> boardSelection(std::vector<std::vector<std::string>> candidateBoards){
+    double randNum = getRandomNumberFromRangeUniform(0, candidateBoards.size());
+    int index = (int)randNum;
     return candidateBoards[index];
 }
 
@@ -333,7 +360,7 @@ void initialiseExperiment(struct parameterValues &parameter_values){
     std::cout << "Please choose the reinforcement learning algorithm you want to use:\n    0) Q-learning\n    1) Sarsa\n";
     std::cin >> parameter_values.RLAlg;
 
-    std::cout << "\nPlease choose the exploration/exploitation algorithm you want to use:\n    0) Upper-Confidence-Bound\n    1) Optimistic starting values\n";
+    std::cout << "\nPlease choose the exploration/exploitation algorithm you want to use:\n    0) Upper-Confidence-Bound\n    1) Optimistic initial values\n    2) Epsilon-greedy\n";
     std::cin >> parameter_values.explorationAlg;
 
     if (parameter_values.explorationAlg == 0){
@@ -344,10 +371,15 @@ void initialiseExperiment(struct parameterValues &parameter_values){
     }
 
     if (parameter_values.explorationAlg == 1){
-        std::cout << "\nPlease choose the optimistic starting values you want to use (between 0 and 1):\n";
+        std::cout << "\nPlease choose the optimistic initial value you want to use (between 0 and 1):\n";
         std::cin >> parameter_values.oValue;
     } else{
         parameter_values.oValue = 5;
+    }
+
+    if (parameter_values.explorationAlg == 2){
+        std::cout << "\n Please choose the epsilon-value you want to use (between 0 and 1):\n";
+        std::cin >> parameter_values.eValue;
     }
     
     std::cout << "\nPlease declare the amount of runs:\n";

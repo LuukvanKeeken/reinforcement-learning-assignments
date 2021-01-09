@@ -18,4 +18,4 @@ void printMeanAndStandardDeviation(std::vector<std::vector<int>> sumWonLostDrawC
 void updateAfterstateQValue(struct parameterValues parameter_values, std::vector<std::string> afterState, std::map<std::vector<std::string>, std::vector<double>> &qValueTableXAfterStates, double bestAfterAfterstateQValue);
 double uCb(double qValue, double c, int count, double steps);
 double getQCount(std::vector<std::string> afterState, std::map<std::vector<std::string>, std::vector<double>> qValueTable);
-std::vector<std::string> boardSelection (std::vector<std::vector<std::string>> candidateBoards, int counter);
+std::vector<std::string> boardSelection (std::vector<std::vector<std::string>> candidateBoards);

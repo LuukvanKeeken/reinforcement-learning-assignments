@@ -8,6 +8,7 @@ struct parameterValues{
     int explorationAlg;
     double cValue;
     double oValue;
+    double eValue;
     int ammOfRuns;
     int gamesPerRun;
     double alpha;
