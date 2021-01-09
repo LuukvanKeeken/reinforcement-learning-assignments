@@ -212,6 +212,30 @@ std::vector<std::string> findBestAfterstate(std::vector<std::string> currentBoar
     return bestAfterstate;
 }
 
+/* Function that goes through all the boards in the map
+    that was already generated, and reassigns it the 
+    correct starting values for the next run. */
+void resetQValueTable(std::map<std::vector<std::string>, std::vector<double>> &qValueTableXAfterstates, struct parameterValues parameter_values){
+    std::string gameResult;
+    for (auto const& x : qValueTableXAfterstates){
+        gameResult = getGameResult(x.first);
+
+        /* If in this board state X has won, give it
+            value 1. If the game state is a draw,
+            give it value 0. If OIV is being used,
+            give any other afterstates the requested
+            parameter value. Else, give it value 0. */
+        if (gameResult == "X"){
+            qValueTableXAfterstates[x.first] = {1,0};
+        } else if (gameResult == "draw"){
+            qValueTableXAfterstates[x.first] = {0,0};
+        } else if (parameter_values.explorationAlg == 1){
+            qValueTableXAfterstates[x.first] = {parameter_values.oValue,0};
+        } else {
+            qValueTableXAfterstates[x.first] = {0,0};
+        }
+    }
+}
 
 
 /* Function that creates a q-value table for each possible board

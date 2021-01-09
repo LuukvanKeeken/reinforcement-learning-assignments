@@ -42,9 +42,11 @@ void learningLoop(struct parameterValues parameter_values){
     int stepsTotal = 0;
     int steps = 0;
 
+    /* Initialise the q-value table for X's afterstates. */
+    qValueTableXAfterStates = generateQValueTableXAfterStates(parameter_values);
+
     for (int run = 0; run < parameter_values.ammOfRuns; run++){
-        /* Initialise the q-value table for X's afterstates. */
-        qValueTableXAfterStates = generateQValueTableXAfterStates(parameter_values);
+        
         /* Board is initialised with each cell empty ("e"). */
         currentBoard = {"e", "e", "e", "e", "e", "e", "e", "e", "e"};
         
@@ -54,9 +56,6 @@ void learningLoop(struct parameterValues parameter_values){
             /* Select the next board from the possible afterstates and adds to the count: number of times that board has been selected. */
             currentBoard = chooseNewAfterstate(currentBoard, qValueTableXAfterStates, steps, parameter_values);
             qValueTableXAfterStates[currentBoard][1]+=1;
-            // std::cout << "X PLAYS:\n";
-            // printBoard(currentBoard);
-            // std::cout << "\n";
 
 
             /* Check whether X has won, if there's a draw, or
@@ -77,9 +76,6 @@ void learningLoop(struct parameterValues parameter_values){
                 /* Let the opponent select his action and update the board. */
                 currentBoard = actionByO(currentBoard);
                 steps += 1;
-                // std::cout << "O PLAYS:\n";
-                // printBoard(currentBoard);
-                // std::cout << "\n";
 
                 /* Check if after O's move X has now lost, or if
                     the game hasn't ended. A win for X or a draw
@@ -151,8 +147,11 @@ void learningLoop(struct parameterValues parameter_values){
             of the total wins/losses/draws for the past run. */
         wonLostDrawCount = {0, 0, 0};
 
-        /* Clear the q-value table for the next run. */
-        qValueTableXAfterStates.clear();
+        /* Reset the afterstates in the map to the correct
+            values, if there is a next run. */
+        if (run != parameter_values.ammOfRuns - 1){
+            resetQValueTable(qValueTableXAfterStates, parameter_values);
+        }
 
         /* Reset gameCounter for the next run. */
         gameCounter = 0;
