@@ -9,6 +9,9 @@
 #include <fstream>
 #include <ctime>
 #include <cmath>
+#include <fstream>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 std::default_random_engine generator(time(0));
 
@@ -170,11 +173,75 @@ double uCb(double qValue, double c, int count, double steps) {
     return uCbValue;
 }
 
+/* Function that checks if a directory exists. If it doesn't, a new
+ * directory with the desired name is created. */
+void directoryCheck(const char* directory_name, std::string dir_name){
+    struct stat info;
+    if (stat(directory_name, &info) != 0){
+        if (mkdir(directory_name, 0777) != 0){
+            std::cout << "Could not create directory \"" + dir_name + "\", please create it manually.\n";
+        } else {
+            std::cout << "Created directory \"" + dir_name + "\".\n";
+        }
+    } else if (!(info.st_mode & S_IFDIR)){
+        std::cout << "\"" + dir_name + "\" is not an existing directory\n";
+        if (mkdir(directory_name, 0777) != 0){
+            std::cout << "Could not create directory \"" + dir_name + "\", please create it manually with that exact name, and restart the experiment.\n";
+        } else {
+            std::cout << "Created directory \"" + dir_name + "\".\n";
+        }
+    }
+}
+
 /* Function that outputs the won/lost/draw percentages for each game
     to a csv file. */
 void createOutputFile(std::vector<std::vector<double>> averagesWonLostDraw, struct parameterValues parameter_values){
     std::ofstream file;
-    file.open("output-files/testFile.csv");
+    std::string fileName;
+    std::string RLAlg;
+
+    if (parameter_values.RLAlg == 0){
+        if (parameter_values.explorationAlg == 0){
+            directoryCheck("output-files/q-learning/upper-confidence-bound", "output-files/q-learning/upper-confidence-bound");
+            fileName = "runs-" + std::to_string(parameter_values.ammOfRuns) + "_games-" + std::to_string(parameter_values.gamesPerRun) +
+                "_alpha-" + std::to_string(parameter_values.alpha) + "_gamma-" + std::to_string(parameter_values.gamma) +
+                "_c-" + std::to_string(parameter_values.cValue);
+            file.open("output-files/q-learning/upper-confidence-bound/" + fileName + ".csv");
+        } else if (parameter_values.explorationAlg == 1){
+            directoryCheck("output-files/q-learning/optimistic-initial-values", "output-files/q-learning/optimistic-initial-values");
+            fileName = "runs-" + std::to_string(parameter_values.ammOfRuns) + "_games-" + std::to_string(parameter_values.gamesPerRun) +
+                "_alpha-" + std::to_string(parameter_values.alpha) + "_gamma-" + std::to_string(parameter_values.gamma) +
+                "_initEst-" + std::to_string(parameter_values.oValue);
+            file.open("output-files/q-learning/optimistic-initial-values/" + fileName + ".csv");
+        } else if (parameter_values.explorationAlg == 2){
+            directoryCheck("output-files/q-learning/epsilon-greedy", "output-files/q-learning/epsilon-greedy");
+            fileName = "runs-" + std::to_string(parameter_values.ammOfRuns) + "_games-" + std::to_string(parameter_values.gamesPerRun) +
+                "_alpha-" + std::to_string(parameter_values.alpha) + "_gamma-" + std::to_string(parameter_values.gamma) +
+                "_epsilon-" + std::to_string(parameter_values.eValue);
+            file.open("output-files/q-learning/epsilon-greedy/" + fileName + ".csv");
+        }
+    } else if (parameter_values.RLAlg == 1){
+        directoryCheck("output-files/sarsa", "output-files/sarsa");
+        if (parameter_values.explorationAlg == 0){
+            directoryCheck("output-files/sarsa/upper-confidence-bound", "output-files/q-learning/upper-confidence-bound");
+            fileName = "runs-" + std::to_string(parameter_values.ammOfRuns) + "_games-" + std::to_string(parameter_values.gamesPerRun) +
+                "_alpha-" + std::to_string(parameter_values.alpha) + "_gamma-" + std::to_string(parameter_values.gamma) +
+                "_c-" + std::to_string(parameter_values.cValue);
+            file.open("output-files/sarsa/upper-confidence-bound/" + fileName + ".csv");
+        } else if (parameter_values.explorationAlg == 1){
+            directoryCheck("output-files/sarsa/optimistic-initial-values", "output-files/q-learning/optimistic-initial-values");
+            fileName = "runs-" + std::to_string(parameter_values.ammOfRuns) + "_games-" + std::to_string(parameter_values.gamesPerRun) +
+                "_alpha-" + std::to_string(parameter_values.alpha) + "_gamma-" + std::to_string(parameter_values.gamma) +
+                "_initEst-" + std::to_string(parameter_values.oValue);
+            file.open("output-files/sarsa/optimistic-initial-values/" + fileName + ".csv");
+        } else if (parameter_values.explorationAlg == 2){
+            directoryCheck("output-files/sarsa/epsilon-greedy", "output-files/q-learning/epsilon-greedy");
+            fileName = "runs-" + std::to_string(parameter_values.ammOfRuns) + "_games-" + std::to_string(parameter_values.gamesPerRun) +
+                "_alpha-" + std::to_string(parameter_values.alpha) + "_gamma-" + std::to_string(parameter_values.gamma) +
+                "_epsilon-" + std::to_string(parameter_values.eValue);
+            file.open("output-files/sarsa/epsilon-greedy/" + fileName + ".csv");    
+        }
+    }
 
     file << "game number,percentage won,percentage lost,percentage draw\n";
     for (int i = 0; i < parameter_values.gamesPerRun; i++){
