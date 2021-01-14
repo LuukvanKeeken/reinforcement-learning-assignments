@@ -4,7 +4,7 @@
 
 std::vector<std::string> actionByO(std::vector<std::string> currentBoard);
 bool checkIfXAfterState(std::vector<std::string> newBoard);
-std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates, int t, struct parameterValues parameter_values);
+std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates, int t, struct parameterValues parameter_values, int gameCounter);
 void directoryCheck(const char* directory_name, std::string dir_name);
 void createOutputFile(std::vector<std::vector<double>> averagesWonLostDraw, struct parameterValues parameter_values);
 std::vector<std::string> findBestAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates);

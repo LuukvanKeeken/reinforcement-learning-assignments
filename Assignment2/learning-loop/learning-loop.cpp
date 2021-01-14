@@ -54,7 +54,7 @@ void learningLoop(struct parameterValues parameter_values){
         while (gameCounter < parameter_values.gamesPerRun){
             steps += 1;
             /* Select the next board from the possible afterstates and adds to the count: number of times that board has been selected. */
-            currentBoard = chooseNewAfterstate(currentBoard, qValueTableXAfterStates, steps, parameter_values);
+            currentBoard = chooseNewAfterstate(currentBoard, qValueTableXAfterStates, steps, parameter_values, gameCounter);
             qValueTableXAfterStates[currentBoard][1]+=1;
 
 
@@ -167,9 +167,33 @@ void learningLoop(struct parameterValues parameter_values){
         sumsWonLostDraw[i][2] = (sumsWonLostDraw[i][2]/parameter_values.ammOfRuns)*100;
     }
 
+    if (parameter_values.lastGreedyGames > 0){
+        double greedyScoreSum = 0;
+        for (int i = (sumsWonLostDraw.size() - 1);  i > (sumsWonLostDraw.size() - 1 - parameter_values.lastGreedyGames); i--){
+            greedyScoreSum += (sumsWonLostDraw[i][0] - sumsWonLostDraw[i][1])/100;
+        }
+
+        greedyScoreSum /= parameter_values.lastGreedyGames;
+
+        double sumOfSquaredDifferences = 0;
+        for (int i = (sumsWonLostDraw.size() - 1);  i > (sumsWonLostDraw.size() - 1 - parameter_values.lastGreedyGames); i--){
+            sumOfSquaredDifferences += pow((sumsWonLostDraw[i][0] - sumsWonLostDraw[i][1])/100 - greedyScoreSum, 2);
+        }
+
+        sumOfSquaredDifferences /= parameter_values.lastGreedyGames;
+        sumOfSquaredDifferences = sqrt(sumOfSquaredDifferences);
+
+
+        std::cout << "Average score over last 20 greedy games, averaged over all runs: " << greedyScoreSum << "\n";
+        std::cout << "Standard deviation of average score over last 20 greedy games, averaged over all runs: " << sumOfSquaredDifferences << "\n";
+    }
+    
+
     printMeanAndStandardDeviation(sumWonLostDrawCount);
 
     createOutputFile(sumsWonLostDraw, parameter_values);    
+
+
 
     std::cout << "Total amount of steps: " << stepsTotal << "\n";
     std::cout << "Average amount of steps per run: " << (double)stepsTotal/(double)parameter_values.ammOfRuns << "\n";

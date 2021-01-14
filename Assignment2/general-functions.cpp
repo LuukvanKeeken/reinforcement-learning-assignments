@@ -79,13 +79,21 @@ bool checkIfXAfterState(std::vector<std::string> newBoard){
 
 /* Function that selects the next afterstate. Doesn't necessarily select the best afterstate,
     as there is a balance between exploration and exploitation. */
-std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates, int t, struct parameterValues parameter_values){
+std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates, int t, struct parameterValues parameter_values, int gameCounter){
     std::vector<std::string> bestAfterstate;
     std::vector<std::vector<std::string>> candidateBoards;
     double bestQValue = -10000;
     double newQValue = 0;
     int count = 0;
     std::vector<std::string> possibleNewBoard;
+
+    /* When the run has come to a point where the user wants to
+        switch to greedy selection, select the afterstate with
+        the highest q-value. */
+    if (gameCounter >= (parameter_values.gamesPerRun - parameter_values.lastGreedyGames)){
+        bestAfterstate = findBestAfterstate(currentBoard, qValueTableXAfterStates);
+        return bestAfterstate;
+    }
 
     /* If the selected exploration algorithm is Epsilon-greedy, select
         an afterstate randomly out of the current possibilities, with
@@ -476,8 +484,11 @@ void initialiseExperiment(struct parameterValues &parameter_values){
     std::cout << "\nPlease declare the amount of runs:\n";
     std::cin >> parameter_values.ammOfRuns;
 
-    std::cout << "\nPlease declare the amount of games to be played:\n";
+    std::cout << "\nPlease declare the total amount of games to be played (including the greedy ones at the end, if relevant):\n";
     std::cin >> parameter_values.gamesPerRun;
+
+    std::cout << "\nPlease declare how many games at the end should be played greedily:\n";
+    std::cin >> parameter_values.lastGreedyGames;
 
     std::cout << "\nPlease declare the value for alpha:\n";
     std::cin >> parameter_values.alpha;

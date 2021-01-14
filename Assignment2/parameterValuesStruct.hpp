@@ -11,6 +11,7 @@ struct parameterValues{
     double eValue;
     int ammOfRuns;
     int gamesPerRun;
+    int lastGreedyGames;
     double alpha;
     double gamma;
 };
