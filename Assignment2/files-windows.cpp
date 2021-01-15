@@ -15,6 +15,9 @@
 #include <sys/types.h>
 #include <direct.h>
 
+
+/* Windows will only make the last folder in the directory_name that is taken as input into this function
+so need to make the folders above manually first */
 void directoryCheck(const char* directory_name, std::string dir_name){
     struct stat info;
     if (stat(directory_name, &info) != 0){
