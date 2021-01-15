@@ -4,6 +4,8 @@
 #include <string>
 #include <map>
 #include "parameterValuesStruct.hpp"
+#include "boardStateStruct.hpp"
+#include "BoardHasherStruct.hpp"
 #include "general-functions.hpp"
 #include <random>
 #include <fstream>
@@ -12,13 +14,14 @@
 #include <fstream>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unordered_map>
 
 std::default_random_engine generator(time(0));
 
 /* Function that selects the action by the opponent.
     Minimax is used with probability 0.8, random selection
     is used with probability 0.2. */
-std::vector<std::string> actionByO(std::vector<std::string> currentBoard){
+struct boardState actionByO(struct boardState currentBoard){
     /* With probability 0.2, the opponent chooses a random action.
         Otherwise, it uses the minimax algorithm. */
     if (getRandomNumberFromRangeUniform(0, 1) < 0.4){
@@ -26,28 +29,32 @@ std::vector<std::string> actionByO(std::vector<std::string> currentBoard){
             still empty and put them in one vector. Then
             get a random index of that vector, the value 
             at that index is the location of the new O. */
-        std::vector<int> freePlaces;
-        for (int i = 0; i < 9; i++){
-            if (currentBoard[i] == "e"){
-                freePlaces.push_back(i);
+        std::vector<std::vector<int>> freePlaces;
+        for (int i = 0; i < 3; i++){
+            for (int j = 0; j < 3; j++){
+                if (currentBoard.board[i][j] == 'e'){
+                    freePlaces.push_back({i, j});
+                }
             }
         }
         int selectedPlace = (int)getRandomNumberFromRangeUniform(0, freePlaces.size());
-        currentBoard[freePlaces[selectedPlace]] = "O";
+        currentBoard.board[freePlaces[selectedPlace][0]][freePlaces[selectedPlace][1]] = 'O';
         return currentBoard;
     } else {
         int bestScore = 10000;
         int newScore = 0;
-        std::vector<std::string> bestNewBoard;
-        std::vector<std::string> possibleNewBoard;
-        for (int i = 0; i < 9; i++){
-            if (currentBoard[i] == "e"){
-                possibleNewBoard = currentBoard;
-                possibleNewBoard[i] = "O";
-                newScore = minimax(possibleNewBoard, 0, true);
-                if (newScore < bestScore){
-                    bestScore = newScore;
-                    bestNewBoard = possibleNewBoard;
+        struct boardState bestNewBoard;
+        struct boardState possibleNewBoard;
+        for (int i = 0; i < 3; i++){
+            for (int j = 0; j < 3; j++){
+                if (currentBoard.board[i][j] == 'e'){
+                    possibleNewBoard = currentBoard;
+                    possibleNewBoard.board[i][j] = 'O';
+                    newScore = minimax(possibleNewBoard, 0, true);
+                    if (newScore < bestScore){
+                        bestScore = newScore;
+                        bestNewBoard = possibleNewBoard;
+                    }
                 }
             }
         }
@@ -60,14 +67,16 @@ std::vector<std::string> actionByO(std::vector<std::string> currentBoard){
 /* Function that checks if the input board state is an afterstate
     from the perspective of X, i.e. one more Xs than Os should be
     on the board. */ 
-bool checkIfXAfterState(std::vector<std::string> newBoard){
+bool checkIfXAfterState(struct boardState newBoard){
     int xCount = 0;
     int oCount = 0;
-    for (int i = 0; i < 9; i++){
-        if (newBoard[i] == "X"){
-            xCount += 1;
-        } else if (newBoard[i] == "O"){
-            oCount += 1;
+    for (int i = 0; i < 3; i++){
+        for (int j = 0; j < 3; j++){
+            if (newBoard.board[i][j] == 'X'){
+                xCount += 1;
+            } else if (newBoard.board[i][j] == 'O'){
+                oCount += 1;
+            }
         }
     }
 
@@ -79,13 +88,14 @@ bool checkIfXAfterState(std::vector<std::string> newBoard){
 
 /* Function that selects the next afterstate. Doesn't necessarily select the best afterstate,
     as there is a balance between exploration and exploitation. */
-std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates, int t, struct parameterValues parameter_values, int gameCounter){
-    std::vector<std::string> bestAfterstate;
-    std::vector<std::vector<std::string>> candidateBoards;
+struct boardState chooseNewAfterstate(struct boardState currentBoard, std::unordered_map<struct boardState, std::array<double, 2>, BoardHasher> qValueTableXAfterStates, int t, struct parameterValues parameter_values, int gameCounter){
+    // std::cout << "test1\n";
+    struct boardState bestAfterstate;
+    std::vector<struct boardState> candidateBoards;
     double bestQValue = -10000;
     double newQValue = 0;
     int count = 0;
-    std::vector<std::string> possibleNewBoard;
+    struct boardState possibleNewBoard;
 
     /* When the run has come to a point where the user wants to
         switch to greedy selection, select the afterstate with
@@ -100,77 +110,97 @@ std::vector<std::string> chooseNewAfterstate(std::vector<std::string> currentBoa
         probability parameter_values.eValue. Else, continue to find 
         the best/greedy afterstate. */
     if (parameter_values.explorationAlg == 2 && getRandomNumberFromRangeUniform(0, 1) < parameter_values.eValue){
-        std::vector<int> freePlaces;
-        for (int i = 0; i < 9; i++){
-            if (currentBoard[i] == "e"){
-                freePlaces.push_back(i);
+        std::vector<std::vector<int>> freePlaces;
+        for (int i = 0; i < 3; i++){
+            for (int j = 0; j < 3; j++){
+                if (currentBoard.board[i][j] == 'e'){
+                    freePlaces.push_back({i, j});
+                }
             }
         }
         int selectedPlace = (int)getRandomNumberFromRangeUniform(0, freePlaces.size());
-        currentBoard[freePlaces[selectedPlace]] = "X";
+        currentBoard.board[freePlaces[selectedPlace][0]][freePlaces[selectedPlace][1]] = 'X';
         return currentBoard;
     }
     
+    // std::cout << "currentboard:\n";
+    // printBoard(currentBoard);
     /* Go through all board positions, and find the ones that are
         still free. Then, find which of the possible afterstates
         has the highest Q-value currently. If multiple afterstates
         have the highest Q-value, select from them randomly. */
-    for (int i = 0; i < 9; i++){
-    
-        /* If the position is still free, look up the Q-value
+    for (int i = 0; i < 3; i++){
+        for (int j = 0; j < 3; j++){
+            /* If the position is still free, look up the Q-value
             for the afterstate that is reached when placing
             an X there. */
-        if (currentBoard[i] == "e"){
-            possibleNewBoard = currentBoard;
-            possibleNewBoard[i] = "X";
-            newQValue = getQValue(possibleNewBoard, qValueTableXAfterStates);
-            
-            /* If UCB is used, add the uncertainty to the Q-value, which is calculated
-                based on how many times the afterstate was previously selected, and the
-                amount of steps that have passed. If this afterstate was never selected,
-                it should immediately be selected, so it gets a value of 1000. */
-            if (parameter_values.explorationAlg == 0){
-                count = getQCount(possibleNewBoard, qValueTableXAfterStates);
-                if (count == 0){
-                    newQValue = 1000;
-                } else{
-                    newQValue = uCb(newQValue, parameter_values.cValue, count, t);
-                }
-            } 
-
-            /* If the Q-value for this afterstate is better than
-                the previous best, make this afterstate the new best.
-                Randomly select among anyboards which share the best values. */
-            if (newQValue > bestQValue){
-                candidateBoards.clear();
-                candidateBoards.push_back(possibleNewBoard);
-                bestQValue = newQValue;
-            } else if (newQValue == bestQValue){
-                candidateBoards.push_back(possibleNewBoard); 
+            if (currentBoard.board[i][j] == 'e'){
+                // std::cout << "position: (" << i << ", " << j << ")\n";
+                possibleNewBoard = currentBoard;
+                possibleNewBoard.board[i][j] = 'X';
+                newQValue = getQValue(possibleNewBoard, qValueTableXAfterStates);
                 
-            }    
+                /* If UCB is used, add the uncertainty to the Q-value, which is calculated
+                    based on how many times the afterstate was previously selected, and the
+                    amount of steps that have passed. If this afterstate was never selected,
+                    it should immediately be selected, so it gets a value of 1000. */
+                if (parameter_values.explorationAlg == 0){
+                    count = getQCount(possibleNewBoard, qValueTableXAfterStates);
+                    if (count == 0){
+                        newQValue = 1000;
+                    } else{
+                        newQValue = uCb(newQValue, parameter_values.cValue, count, t);
+                    }
+                } 
+
+                /* If the Q-value for this afterstate is better than
+                    the previous best, make this afterstate the new best.
+                    Randomly select among anyboards which share the best values. */
+                if (newQValue > bestQValue){
+                    candidateBoards.clear();
+                    candidateBoards.push_back(possibleNewBoard);
+                    bestQValue = newQValue;
+                } else if (newQValue == bestQValue){
+                    candidateBoards.push_back(possibleNewBoard); 
+                    
+                }    
+            }
         }
+        
     }
+    // std::cout << "test2\n";
 
     /* If only one afterstate had the highest value, return it.
         Else, select randomly from the multiple possibilities. */
     if (candidateBoards.size() == 1){
+        // std::cout << "test3\n";
         return candidateBoards[0];
     } else {
-        return boardSelection(candidateBoards);
+        // std::cout << "test4\n";
+        struct boardState selectedBoard = boardSelection(candidateBoards);
+        // std::cout << "here1\n";
+        // printBoard(selectedBoard);
+        // std::cout << "here2\n";
+        return selectedBoard;
     }
 }
 
 /* Function that randomly selects an afterstate out of multiple
     afterstates in a vector. */
-std::vector<std::string> boardSelection(std::vector<std::vector<std::string>> candidateBoards){
+struct boardState boardSelection(std::vector<struct boardState> candidateBoards){
+    // std::cout << "test5\n";
     double randNum = getRandomNumberFromRangeUniform(0, candidateBoards.size());
     int index = (int)randNum;
-    return candidateBoards[index];
+    // std::cout << "test5.5\n";
+    // std::cout << "index: " << index << "\n";
+    // std::cout << "size: " << candidateBoards.size() << "\n";
+    struct boardState selectedBoard = candidateBoards[index];
+    // std::cout << "test6\n";
+    return selectedBoard;
 }
 
 /* Function that returns the Count of the input state.*/
-double getQCount(std::vector<std::string> afterState, std::map<std::vector<std::string>, std::vector<double>> qValueTable){
+double getQCount(struct boardState afterState, std::unordered_map<struct boardState, std::array<double, 2>, BoardHasher> qValueTable){
     return qValueTable[afterState][1];
 }
 
@@ -261,28 +291,32 @@ void createOutputFile(std::vector<std::vector<double>> averagesWonLostDraw, stru
 
 
 /* Function that finds the best possible afterstate from the current board. */
-std::vector<std::string> findBestAfterstate(std::vector<std::string> currentBoard, std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates){
-    std::vector<std::string> bestAfterstate;
+struct boardState findBestAfterstate(struct boardState currentBoard, std::unordered_map<struct boardState, std::array<double, 2>, BoardHasher> qValueTableXAfterStates){
+    struct boardState bestAfterstate;
     double bestQValue = -10000;
     double newQValue = 0;
-    std::vector<std::string> possibleNewBoard;
+    struct boardState possibleNewBoard;
     /* Go through all positions to check if an X can be placed there. */
-    for (int i = 0; i < 9; i++){
-        possibleNewBoard = currentBoard;
-        /* If the position is still free, look up the Q-value
-            for the afterstate that is reached when placing
-            an X there. */
-        if (currentBoard[i] == "e"){
-            possibleNewBoard[i] = "X";
-            newQValue = getQValue(possibleNewBoard, qValueTableXAfterStates);
-            /* If the Q-value for this afterstate is better than
-                the previous best, make this afterstate the new best. */
-            if (newQValue > bestQValue){
-                bestQValue = newQValue;
-                bestAfterstate = possibleNewBoard;
+    for (int i = 0; i < 3; i++){
+        for (int j = 0; j < 3; j++){
+            possibleNewBoard = currentBoard;
+            /* If the position is still free, look up the Q-value
+                for the afterstate that is reached when placing
+                an X there. */
+            if (currentBoard.board[i][j] == 'e'){
+                possibleNewBoard.board[i][j] = 'X';
+                newQValue = getQValue(possibleNewBoard, qValueTableXAfterStates);
+                /* If the Q-value for this afterstate is better than
+                    the previous best, make this afterstate the new best. */
+                if (newQValue > bestQValue){
+                    bestQValue = newQValue;
+                    bestAfterstate = possibleNewBoard;
+                }
             }
         }
     }
+
+
 
     return bestAfterstate;
 }
@@ -290,7 +324,7 @@ std::vector<std::string> findBestAfterstate(std::vector<std::string> currentBoar
 /* Function that goes through all the boards in the map
     that was already generated, and reassigns it the 
     correct starting values for the next run. */
-void resetQValueTable(std::map<std::vector<std::string>, std::vector<double>> &qValueTableXAfterstates, struct parameterValues parameter_values){
+void resetQValueTable(std::unordered_map<struct boardState, std::array<double, 2>, BoardHasher> &qValueTableXAfterstates, struct parameterValues parameter_values){
     std::string gameResult;
     for (auto const& x : qValueTableXAfterstates){
         gameResult = getGameResult(x.first);
@@ -316,10 +350,16 @@ void resetQValueTable(std::map<std::vector<std::string>, std::vector<double>> &q
 /* Function that creates a q-value table for each possible board
     state. Can probably be used to update afterstates for both
     player X and player O, as those don't overlap. */
-std::map<std::vector<std::string>, std::vector<double>> generateQValueTableXAfterStates(struct parameterValues parameter_values){
-    std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates;
-    std::vector<std::string> newBoard = {"e", "e", "e", "e", "e", "e", "e", "e", "e"};
-    std::vector<std::string> possibleSymbols = {"e", "X", "O"};
+std::unordered_map<struct boardState, std::array<double, 2>, BoardHasher> generateQValueTableXAfterStates(struct parameterValues parameter_values){
+    std::unordered_map<struct boardState, std::array<double, 2>, BoardHasher> qValueTableXAfterStates;
+    struct boardState newBoard;
+    for (int i = 0; i < 3; i++){
+        for (int j = 0; j < 3; j++){
+            newBoard.board[i][j];
+        }
+    }
+
+    std::vector<char> possibleSymbols = {'e', 'X', 'O'};
     int xCount = 0;
     int oCount = 0;
     std::string gameResult;
@@ -328,23 +368,23 @@ std::map<std::vector<std::string>, std::vector<double>> generateQValueTableXAfte
         the number of Os are put into the table, as
         only those are afterstates for X. */
     for (int i = 0; i < 3; i++){
-        newBoard[8] = possibleSymbols[i];
+        newBoard.board[2][2] = possibleSymbols[i];
         for (int j = 0; j < 3; j++){
-            newBoard[7] = possibleSymbols[j];
+            newBoard.board[2][1] = possibleSymbols[j];
             for (int k = 0; k < 3; k++){
-                newBoard[6] = possibleSymbols[k];
+                newBoard.board[2][0] = possibleSymbols[k];
                 for (int l = 0; l < 3; l++){
-                    newBoard[5] = possibleSymbols[l];
+                    newBoard.board[1][2] = possibleSymbols[l];
                     for (int m = 0; m < 3; m++){
-                        newBoard[4] = possibleSymbols[m];
+                        newBoard.board[1][1] = possibleSymbols[m];
                         for (int n = 0; n < 3; n++){
-                            newBoard[3] = possibleSymbols[n];
+                            newBoard.board[1][0] = possibleSymbols[n];
                             for (int o = 0; o < 3; o++){
-                                newBoard[2] = possibleSymbols[o];
+                                newBoard.board[0][2] = possibleSymbols[o];
                                 for (int p = 0; p < 3; p++){
-                                    newBoard[1] = possibleSymbols[p];
+                                    newBoard.board[0][1] = possibleSymbols[p];
                                     for (int q = 0; q < 3; q++){
-                                        newBoard[0] = possibleSymbols[q];
+                                        newBoard.board[0][0] = possibleSymbols[q];
                                         /* Only add the board if it is an afterstate from
                                             X's perspective. */
                                         if (checkIfXAfterState(newBoard)){
@@ -358,7 +398,7 @@ std::map<std::vector<std::string>, std::vector<double>> generateQValueTableXAfte
                                                 the game. */
                                             gameResult = getGameResult(newBoard);
                                             if (gameResult == "X"){
-                                                qValueTableXAfterStates[newBoard] = {1,0};
+                                                qValueTableXAfterStates[newBoard] = {1.0,0.0};
                                             } else if (gameResult == "draw"){
                                                 qValueTableXAfterStates[newBoard] = {0,0};
                                             } else if (parameter_values.explorationAlg == 1){
@@ -384,65 +424,69 @@ std::map<std::vector<std::string>, std::vector<double>> generateQValueTableXAfte
 /* Function that returns the winner of the game, or else returns that
  * the game has ended in a draw or hasn't ended yet. The game ends 
  * in a draw if there are no open cells left, and there is no winner. */
-std::string getGameResult(std::vector<std::string> currentBoard){
+char getGameResult(struct boardState currentBoard){
     /* Check if anywhere on the board there are three identical
      * symbols (not " ") in a row. If so, the player with that
      * symbol has won, and that symbol is returned. */
-    if (currentBoard[0] != "e"){
+    if (currentBoard.board[0][0] != 'e'){
         /* Top horizontal */
-        if (currentBoard[0] == currentBoard[1] && currentBoard[0] == currentBoard[2]){
-            return currentBoard[0];
+        if (currentBoard.board[0][0] == currentBoard.board[0][1] && currentBoard.board[0][0] == currentBoard.board[0][2]){
+            return currentBoard.board[0][0];
         /* Left vertical */
-        } else if (currentBoard[0] == currentBoard[3] && currentBoard[0] == currentBoard[6]){
-            return currentBoard[0];
+        } else if (currentBoard.board[0][0] == currentBoard.board[1][0] && currentBoard.board[0][0] == currentBoard.board[2][0]){
+            return currentBoard.board[0][0];
         /* Top-left to bottom-right diagonal */
-        } else if (currentBoard[0] == currentBoard[4] && currentBoard[0] == currentBoard[8]){
-            return currentBoard[0];
+        } else if (currentBoard.board[0][0] == currentBoard.board[1][1] && currentBoard.board[0][0] == currentBoard.board[2][2]){
+            return currentBoard.board[0][0];
         }
     }
-    if (currentBoard[1] != "e"){
+    if (currentBoard.board[0][1] != 'e'){
         /* Mid vertical */
-        if (currentBoard[1] == currentBoard[4] && currentBoard[1] == currentBoard[7]){
-            return currentBoard[1];
+        if (currentBoard.board[0][1] == currentBoard.board[1][1] && currentBoard.board[0][1] == currentBoard.board[2][1]){
+            return currentBoard.board[0][1];
         }
     } 
-    if (currentBoard[2] != "e"){
+    if (currentBoard.board[0][2] != 'e'){
         /* Top-right to bottom-left diagonal */
-        if (currentBoard[2] == currentBoard[4] && currentBoard[2] == currentBoard[6]){
-            return currentBoard[2];
+        if (currentBoard.board[0][2] == currentBoard.board[1][1] && currentBoard.board[0][2] == currentBoard.board[2][0]){
+            return currentBoard.board[0][2];
         /* Right vertical */
-        } else if (currentBoard[2] == currentBoard[5] && currentBoard[2] == currentBoard[8]){
-            return currentBoard[2];
+        } else if (currentBoard.board[0][2] == currentBoard.board[1][2] && currentBoard.board[0][2] == currentBoard.board[2][2]){
+            return currentBoard.board[0][2];
         }
     } 
-    if (currentBoard[3] != "e"){
+    if (currentBoard.board[1][0] != 'e'){
         /* Mid horizontal */
-        if (currentBoard[3] == currentBoard[4] && currentBoard[3] == currentBoard[5]){
-            return currentBoard[3];
+        if (currentBoard.board[1][0] == currentBoard.board[1][1] && currentBoard.board[1][0] == currentBoard.board[1][2]){
+            return currentBoard.board[1][0];
         } 
     }
-    if (currentBoard[6] != "e"){
+    if (currentBoard.board[2][0] != 'e'){
         /* Bottom horizontal */
-        if (currentBoard[6] == currentBoard[7] && currentBoard[6] == currentBoard[8]){
-            return currentBoard[6];
+        if (currentBoard.board[2][0] == currentBoard.board[2][1] && currentBoard.board[2][0] == currentBoard.board[2][2]){
+            return currentBoard.board[2][0];
         }
     }
     
 
     /* As at this point no winner has been found, either the game has ended
      * in a draw or it hasn't ended yet. */
-    for (int i = 0; i < currentBoard.size(); i++){
-        if (currentBoard[i] == "e"){
-            return "not ended";
+    for (int i = 0; i < 3; i++){
+        for (int j = 0; j < 3; j++){
+            if (currentBoard.board[i][j] == 'e'){
+                // std::cout << "not ended:\n";
+                // printBoard(currentBoard);
+                return 'n';
+            }
         }
     }
 
     /* There is no winner and no open cell left, so the game has ended in a draw. */
-    return "draw";
+    return 'd';
 }
 
 /* Function that returns the Q-value of the input afterstate.*/
-double getQValue(std::vector<std::string> afterState, std::map<std::vector<std::string>, std::vector<double>> qValueTable){
+double getQValue(struct boardState afterState, std::unordered_map<struct boardState, std::array<double, 2>, BoardHasher> qValueTable){
     return qValueTable[afterState][0];
 }
 
@@ -498,14 +542,14 @@ void initialiseExperiment(struct parameterValues &parameter_values){
 }
 
 /* Minimax algorithm. */
-int minimax(std::vector<std::string> board, int depth, bool isMaximising){
-    std::string gameResult = getGameResult(board);
-    if (gameResult != "not ended"){
-        if (gameResult == "X"){
+int minimax(struct boardState board, int depth, bool isMaximising){
+    char gameResult = getGameResult(board);
+    if (gameResult != 'n'){
+        if (gameResult == 'X'){
             return 1;
-        } else if (gameResult == "O"){
+        } else if (gameResult == 'O'){
             return -1;
-        } else if (gameResult == "draw"){
+        } else if (gameResult == 'd'){
             return 0;
         }
     }
@@ -513,14 +557,16 @@ int minimax(std::vector<std::string> board, int depth, bool isMaximising){
     if (isMaximising){
         int bestScore = -10000;
         int newScore = 0;
-        std::vector<std::string> possibleNewBoard;
-        for (int i = 0; i < 9; i++){
-            if (board[i] == "e"){
-                possibleNewBoard = board;
-                possibleNewBoard[i] = "X";
-                newScore = minimax(possibleNewBoard, depth+1, false);
-                if (newScore > bestScore){
-                    bestScore = newScore;
+        struct boardState possibleNewBoard;
+        for (int i = 0; i < 3; i++){
+            for (int j = 0; j < 3; j++){
+                if (board.board[i][j] == 'e'){
+                    possibleNewBoard = board;
+                    possibleNewBoard.board[i][j] = 'X';
+                    newScore = minimax(possibleNewBoard, depth+1, false);
+                    if (newScore > bestScore){
+                        bestScore = newScore;
+                    }
                 }
             }
         }
@@ -528,14 +574,16 @@ int minimax(std::vector<std::string> board, int depth, bool isMaximising){
     } else {
         int bestScore = 10000;
         int newScore = 0;
-        std::vector<std::string> possibleNewBoard;
-        for (int i = 0; i < 9; i++){
-            if (board[i] == "e"){
-                possibleNewBoard = board;
-                possibleNewBoard[i] = "O";
-                newScore = minimax(possibleNewBoard, depth+1, true);
-                if (newScore < bestScore){
-                    bestScore = newScore;
+        struct boardState possibleNewBoard;
+        for (int i = 0; i < 3; i++){
+            for (int j = 0; j < 3; j++){
+                if (board.board[i][j] == 'e'){
+                    possibleNewBoard = board;
+                    possibleNewBoard.board[i][j] = 'O';
+                    newScore = minimax(possibleNewBoard, depth+1, true);
+                    if (newScore < bestScore){
+                        bestScore = newScore;
+                    }
                 }
             }
         }
@@ -545,18 +593,18 @@ int minimax(std::vector<std::string> board, int depth, bool isMaximising){
 
 
 /* Function that prints a board. */
-void printBoard(std::vector<std::string> board){
-    std::cout << " " << board[0] << "|";
-    std::cout << board[1] << "|";
-    std::cout << board[2] << "\n";
+void printBoard(struct boardState boardState){
+    std::cout << " " << boardState.board[0][0] << "|";
+    std::cout << boardState.board[0][1] << "|";
+    std::cout << boardState.board[0][2] << "\n";
     std::cout << "------\n";
-    std::cout << " " << board[3] << "|";
-    std::cout << board[4] << "|";
-    std::cout << board[5] << "\n";
+    std::cout << " " << boardState.board[1][0] << "|";
+    std::cout << boardState.board[1][1] << "|";
+    std::cout << boardState.board[1][2] << "\n";
     std::cout << "------\n";
-    std::cout << " " << board[6] << "|";
-    std::cout << board[7] << "|";
-    std::cout << board[8] << "\n";
+    std::cout << " " << boardState.board[2][0] << "|";
+    std::cout << boardState.board[2][1] << "|";
+    std::cout << boardState.board[2][2] << "\n";
 }
 
 /* Function that calculates and prints the mean and standard deviation
@@ -606,6 +654,6 @@ void printMeanAndStandardDeviation(std::vector<std::vector<int>> sumWonLostDrawC
     In tic-tac-toe there are no rewards associated with single moves,
     only +1, -1, or 0 at the end. That's why there is no reward factor in this
     update equation. */
-void updateAfterstateQValue(struct parameterValues parameter_values, std::vector<std::string> afterState, std::map<std::vector<std::string>, std::vector<double>> &qValueTableXAfterStates, double bestAfterAfterstateQValue){
-    qValueTableXAfterStates[afterState][0] += parameter_values.alpha*(parameter_values.gamma*bestAfterAfterstateQValue - qValueTableXAfterStates[afterState][0]);
+void updateAfterstateQValue(struct parameterValues parameter_values, struct boardState afterState, std::unordered_map<struct boardState, std::array<double, 2>, BoardHasher> &qValueTableXAfterstates, double bestAfterAfterstateQValue){
+    qValueTableXAfterstates[afterState][0] += parameter_values.alpha*(parameter_values.gamma*bestAfterAfterstateQValue - qValueTableXAfterstates[afterState][0]);
 }

@@ -1,9 +1,12 @@
 #include <iostream>
 #include <vector>
 #include "../parameterValuesStruct.hpp"
+#include "../BoardHasherStruct.hpp"
 #include "../general-functions.hpp"
+#include "../boardStateStruct.hpp"
 #include <ctime>
 #include <cmath>
+#include <unordered_map>
 
 /* Function that lets the agent play a certain amount of games
     (parameter_values.gamesPerRun), and repeats this for a certain
@@ -32,12 +35,11 @@ void learningLoop(struct parameterValues parameter_values){
         wins/losses/draws over all runs. */
     std::vector<std::vector<int>> sumWonLostDrawCount;
     
-
-
-    std::map<std::vector<std::string>, std::vector<double>> qValueTableXAfterStates;
-    std::vector<std::string> currentBoard;
-    std::vector<std::string> previousBoard;
-    std::string gameResult;
+    
+    std::unordered_map<struct boardState, std::array<double, 2>, BoardHasher> qValueTableXAfterStates;
+    struct boardState currentBoard;
+    struct boardState previousBoard;
+    char gameResult;
     int gameCounter = 0;
     int stepsTotal = 0;
     int steps = 0;
@@ -48,21 +50,30 @@ void learningLoop(struct parameterValues parameter_values){
     for (int run = 0; run < parameter_values.ammOfRuns; run++){
         
         /* Board is initialised with each cell empty ("e"). */
-        currentBoard = {"e", "e", "e", "e", "e", "e", "e", "e", "e"};
+        for (int i = 0; i < 3; i++){
+            for (int j = 0; j < 3; j++){
+                currentBoard.board[i][j] = 'e';
+            }
+        }
         
         std::cout << "Start of run " << run << "\n";
         while (gameCounter < parameter_values.gamesPerRun){
+            // std::cout << "Game number: " << gameCounter << "\n";
             steps += 1;
             /* Select the next board from the possible afterstates and adds to the count: number of times that board has been selected. */
             currentBoard = chooseNewAfterstate(currentBoard, qValueTableXAfterStates, steps, parameter_values, gameCounter);
+            // std::cout << "X plays:\n";
+            // printBoard(currentBoard);
+            // std::cout << "test7\n";
             qValueTableXAfterStates[currentBoard][1]+=1;
-
+            // std::cout << "test8\n";
 
             /* Check whether X has won, if there's a draw, or
                 if the game hasn't ended yet. X cannot have
                 lost after its own move. */
             gameResult = getGameResult(currentBoard);
-            if (gameResult == "not ended"){
+            if (gameResult == 'n'){
+                // std::cout << "not ended X\n";
                 /* If the RL algorithm is Sarsa, the Q-value of the previous afterState can be
                     updated, now that X has chosen a new afterState. */
                 if (steps > 1 && parameter_values.RLAlg == 1){
@@ -75,33 +86,42 @@ void learningLoop(struct parameterValues parameter_values){
 
                 /* Let the opponent select his action and update the board. */
                 currentBoard = actionByO(currentBoard);
+                // std::cout << "O plays:\n";
+                // printBoard(currentBoard);
+                // std::cout << "after actionByO\n";
                 steps += 1;
 
                 /* Check if after O's move X has now lost, or if
                     the game hasn't ended. A win for X or a draw
                     aren't possible after O's move. */
                 gameResult = getGameResult(currentBoard);
-
-                if (gameResult == "not ended"){
+                // std::cout << "after getGameResult\n";
+                if (gameResult == 'n'){
+                    // std::cout << "not ended O\n";
                     /* Game hasn't ended, update previous board/afterstate q-value with the 
                         q-value of the best possible next afterstate as the target. Only
                         for Q-learning.*/
                     if (parameter_values.RLAlg == 0){
                         updateAfterstateQValue(parameter_values, previousBoard, qValueTableXAfterStates, getQValue(findBestAfterstate(currentBoard, qValueTableXAfterStates), qValueTableXAfterStates));
                     }
-                } else if (gameResult == "O"){
+                } else if (gameResult == 'O'){
+                    // std::cout << "O won\n";
                     /* Lost, update previous board/afterstate q-value with -1 as target, start new run.
                         This works the same for both Q-learning and Sarsa, i.e. update the Q-value of the
                         last afterstate chosen by X with -1 as the target. */
                     updateAfterstateQValue(parameter_values, previousBoard, qValueTableXAfterStates, -1);
                     
                     
-                    currentBoard = {"e", "e", "e", "e", "e", "e", "e", "e", "e"};
+                    for (int i = 0; i < 3; i++){
+                        for (int j = 0; j < 3; j++){
+                            currentBoard.board[i][j] = 'e';
+                        }
+                    }
                     gameCounter += 1;
                     wonLostDraw.push_back({0.0, 1.0, 0.0});
                     wonLostDrawCount[1] += 1;
                 }
-            } else if (gameResult == "X"){
+            } else if (gameResult == 'X'){
                 /* Won, afterstate already has value 1, start new run. */
                 /* If the RL algorithm is Sarsa, the Q-value of the previous afterState can be
                     updated, now that X has chosen a new afterState. As X has won with this
@@ -109,11 +129,15 @@ void learningLoop(struct parameterValues parameter_values){
                 if (steps > 1 && parameter_values.RLAlg == 1){
                     updateAfterstateQValue(parameter_values, previousBoard, qValueTableXAfterStates, 1);
                 }
-                currentBoard = {"e", "e", "e", "e", "e", "e", "e", "e", "e"};
+                for (int i = 0; i < 3; i++){
+                    for (int j = 0; j < 3; j++){
+                        currentBoard.board[i][j] = 'e';
+                    }
+                }
                 gameCounter += 1;
                 wonLostDraw.push_back({1.0, 0.0, 0.0});
                 wonLostDrawCount[0] += 1;
-            } else if (gameResult == "draw"){
+            } else if (gameResult == 'd'){
                 /* Draw, afterstate already has value 0, start new run. */
                 /* If the RL algorithm is Sarsa, the Q-value of the previous afterState can be
                     updated, now that X has chosen a new afterState. As there is a draw with
@@ -121,7 +145,11 @@ void learningLoop(struct parameterValues parameter_values){
                 if (steps > 1 && parameter_values.RLAlg == 1){
                     updateAfterstateQValue(parameter_values, previousBoard, qValueTableXAfterStates, 0);
                 }
-                currentBoard = {"e", "e", "e", "e", "e", "e", "e", "e", "e"};
+                for (int i = 0; i < 3; i++){
+                    for (int j = 0; j < 3; j++){
+                        currentBoard.board[i][j] = 'e';
+                    }
+                }
                 gameCounter += 1;
                 wonLostDraw.push_back({0.0, 0.0, 1.0});
                 wonLostDrawCount[2] += 1;
