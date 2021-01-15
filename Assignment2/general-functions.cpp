@@ -13,12 +13,9 @@
 #include <fstream>
 #include <sys/types.h>
 #include <sys/stat.h>
-<<<<<<< HEAD
 #include <unordered_map>
-=======
-#include <direct.h>
+// #include <direct.h>
 
->>>>>>> f284f2f6d928cd8cb4495ed1ed37b1a20facf3ab
 
 std::default_random_engine generator(time(0));
 
