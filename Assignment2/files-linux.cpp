@@ -14,6 +14,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+/* Function that checks if a directory exists. If it doesn't, a new
+ * directory with the desired name is created. */
 void directoryCheck(const char* directory_name, std::string dir_name){
     struct stat info;
     if (stat(directory_name, &info) != 0){

@@ -9,29 +9,6 @@
 
 std::default_random_engine generator(time(0));
 
-
-/* Function that checks if a directory exists. If it doesn't, a new
- * directory with the desired name is created. */
-void directoryCheck(const char* directory_name, std::string dir_name){
-    struct stat info;
-    if (stat(directory_name, &info) != 0){
-        if (mkdir(directory_name, 0777) != 0){
-            std::cout << "Could not create directory \"" + dir_name + "\", please create it manually.\n";
-        } else {
-            std::cout << "Created directory \"" + dir_name + "\".\n";
-        }
-    } else if (!(info.st_mode & S_IFDIR)){
-        std::cout << "\"" + dir_name + "\" is not an existing directory\n";
-        if (mkdir(directory_name, 0777) != 0){
-            std::cout << "Could not create directory \"" + dir_name + "\", please create it manually with that exact name, and restart the experiment.\n";
-        } else {
-            std::cout << "Created directory \"" + dir_name + "\".\n";
-        }
-    }
-}
-
-
-
 /* Function that creates a .csv file with as a file name all the relevant values,
  * such as the used algorithm, the amount of rounds, and any relevant parameters
  * such as epsilon and alpha. This file contains the averaged reward received at
